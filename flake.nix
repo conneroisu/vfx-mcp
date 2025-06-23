@@ -19,6 +19,47 @@
           virtualenv
         ]);
 
+
+        rooted = text:
+          builtins.concatStringsSep "\n" [
+            ''
+              REPO_ROOT="$(git rev-parse --show-toplevel)"
+            ''
+            text
+          ];
+
+        scripts = {
+          dx = {
+            text = rooted ''$EDITOR "$REPO_ROOT"/flake.nix'';
+            description = "Edit flake.nix";
+          };
+          tests = {
+            text = rooted ''
+              cd "$REPO_ROOT"
+            '';
+            runtimeInputs = with pkgs; [go bun];
+            description = "Run all go tests";
+          };
+          run = {
+            text = rooted ''cd "$REPO_ROOT" && air'';
+            env.DEBUG = "true";
+            runtimeInputs = with pkgs; [air git];
+            description = "Run the application with air for hot reloading";
+          };
+        };
+
+        scriptPackages =
+          pkgs.lib.mapAttrs
+          (
+            name: script:
+              pkgs.writeShellApplication {
+                inherit name;
+                inherit (script) text;
+                runtimeInputs = script.runtimeInputs or [];
+                runtimeEnv = script.env or {};
+              }
+          )
+          scripts;
       in
       {
         devShells.default = pkgs.mkShell {
@@ -32,7 +73,8 @@
             
             # Development tools
             ruff
-            mypy
+            black
+            basedpyright
             
             # Shell utilities
             git
@@ -42,7 +84,9 @@
             # Optional: For advanced video processing
             imagemagick
             sox  # For audio processing
-          ];
+          ]
+
+            ++ builtins.attrValues scriptPackages;
 
           shellHook = ''
             echo "🎬 VFX MCP Development Environment"

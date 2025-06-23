@@ -193,3 +193,29 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .direnv
+
+# Video files (for testing)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.mp3
+*.wav
+*.aac
+
+# But keep example videos if added
+!examples/sample_*.mp4
+
+# Temporary files
+*.tmp
+concat_list.txt
+
+# Nix
+result
+result-*
+
+# IDE
+.idea/
