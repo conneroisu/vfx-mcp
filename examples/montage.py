@@ -1,35 +1,46 @@
 #!/usr/bin/env python3
-"""
-Example: Create a video montage.
+"""Example: Create a video montage.
 
 This example demonstrates how to use the VFX MCP server to create
 a video montage by trimming clips from multiple videos and concatenating
 them together with background music.
+
+Typical usage example:
+    $ python examples/montage.py
 """
 
+from __future__ import annotations
+
 import asyncio
+import json
 from pathlib import Path
+from typing import Any
 
 from fastmcp import Client
 
 
-async def create_montage():
-    """
-    Create a video montage from multiple source videos.
+async def create_montage() -> None:
+    """Create a video montage from multiple source videos.
 
-    This function demonstrates:
-    1. Trimming specific segments from videos
+    Demonstrates a complete workflow for creating a video montage:
+    1. Trimming specific segments from source videos
     2. Concatenating the clips together
     3. Adding background music to the final montage
+    4. Extracting final video information
+
+    Requires source videos (vacation.mp4, birthday.mp4, concert.mp4)
+    and optionally background_music.mp3 in the current directory.
     """
     # Connect to the VFX MCP server
     # Note: The server should be running with: uv run python main.py
     async with Client("python main.py") as client:
         print("Connected to VFX MCP server")
 
-        # Define our source clips
+        # Define source clips with (filename, start_time, duration) tuples
         # In a real scenario, these would be actual video files
-        clips_to_extract = [
+        clips_to_extract: list[
+            tuple[str, int, int]
+        ] = [
             (
                 "vacation.mp4",
                 30,
@@ -51,14 +62,14 @@ async def create_montage():
         print(
             "\n1. Extracting clips from source videos..."
         )
-        clips = []
+        clips: list[str] = []
 
         for i, (
             video,
             start,
             duration,
         ) in enumerate(clips_to_extract):
-            clip_path = f"clip_{i}.mp4"
+            clip_path: str = f"clip_{i}.mp4"
 
             # Check if source video exists
             if not Path(video).exists():
@@ -98,7 +109,7 @@ async def create_montage():
         print(
             f"\n2. Concatenating {len(clips)} clips..."
         )
-        montage_path = "montage.mp4"
+        montage_path: str = "montage.mp4"
 
         try:
             await client.call_tool(
@@ -118,12 +129,12 @@ async def create_montage():
             return
 
         # Step 3: Add background music (if available)
-        music_path = "background_music.mp3"
+        music_path: str = "background_music.mp3"
         if Path(music_path).exists():
             print(
                 "\n3. Adding background music..."
             )
-            final_path = "final_montage.mp4"
+            final_path: str = "final_montage.mp4"
 
             try:
                 await client.call_tool(
@@ -145,7 +156,7 @@ async def create_montage():
             print(
                 f"\n3. Skipping background music ('{music_path}' not found)"
             )
-            final_path = montage_path
+            final_path: str = montage_path
 
         # Step 4: Get information about the final video
         print("\n4. Final montage information:")
@@ -155,12 +166,12 @@ async def create_montage():
                 {"video_path": final_path},
             )
 
-            # Parse the result
-            import json
-
+            # Parse the result from MCP response
             if hasattr(info.content[0], "text"):
-                info_data = json.loads(
-                    info.content[0].text
+                info_data: dict[str, Any] = (
+                    json.loads(
+                        info.content[0].text
+                    )
                 )
             else:
                 info_data = info.content[0]
@@ -187,8 +198,12 @@ async def create_montage():
         print("\n✅ Montage creation complete!")
 
 
-def main():
-    """Run the montage creation example."""
+def main() -> None:
+    """Run the montage creation example.
+
+    Displays usage information and executes the montage creation workflow.
+    Handles keyboard interrupts gracefully and reports any errors.
+    """
     print("=== VFX MCP Video Montage Example ===")
     print("\nThis example requires:")
     print("- The VFX MCP server to be running")

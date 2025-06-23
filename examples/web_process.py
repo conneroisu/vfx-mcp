@@ -1,30 +1,43 @@
 #!/usr/bin/env python3
-"""
-Example: Process video for web deployment.
+"""Example: Process video for web deployment.
 
 This example demonstrates how to prepare a video for web deployment by:
 1. Converting to web-friendly format
 2. Creating multiple resolution versions
 3. Generating thumbnails
+
+Typical usage example:
+    $ python examples/web_process.py input_video.mp4
+    $ python examples/web_process.py  # Processes all videos in current directory
 """
 
+from __future__ import annotations
+
 import asyncio
+import json
+import sys
 from pathlib import Path
+from typing import Any
 
 from fastmcp import Client
 
 
-async def process_for_web(input_video: str):
-    """
-    Process a video for web deployment.
+async def process_for_web(
+    input_video: str,
+) -> None:
+    """Process a video for web deployment.
+
+    Demonstrates a complete workflow for preparing videos for web deployment
+    including format optimization, multi-resolution encoding, and thumbnail
+    generation for adaptive streaming scenarios.
 
     Args:
-        input_video: Path to the input video file
+        input_video: Path to the input video file to process.
 
     This function demonstrates:
     1. Converting to H.264/AAC MP4 format
     2. Creating multiple resolutions for adaptive streaming
-    3. Generating thumbnail images
+    3. Generating thumbnail images at key timestamps
     """
     async with Client("python main.py") as client:
         print(
@@ -46,13 +59,11 @@ async def process_for_web(input_video: str):
                 {"video_path": input_video},
             )
 
-            # Parse the result
-            import json
-
+            # Parse the result from MCP response
             if hasattr(
                 info_result.content[0], "text"
             ):
-                info = json.loads(
+                info: dict[str, Any] = json.loads(
                     info_result.content[0].text
                 )
             else:
@@ -66,7 +77,7 @@ async def process_for_web(input_video: str):
                 f"   Duration: {info['duration']:.2f} seconds"
             )
             print(f"   Format: {info['format']}")
-            original_width = info["video"][
+            original_width: int = info["video"][
                 "width"
             ]
         except Exception as e:
@@ -79,7 +90,7 @@ async def process_for_web(input_video: str):
         print(
             "\n2. Converting to web-optimized format..."
         )
-        web_video = "web_optimized.mp4"
+        web_video: str = "web_optimized.mp4"
 
         # Note: In the current implementation, convert_format is not available
         # This is a placeholder for when the tool is implemented
@@ -115,23 +126,27 @@ async def process_for_web(input_video: str):
         )
 
         # Define target resolutions (width, name)
-        # Only create resolutions smaller than the original
-        all_resolutions = [
+        # Only create resolutions smaller than or equal to the original
+        all_resolutions: list[tuple[int, str]] = [
             (1920, "1080p"),
             (1280, "720p"),
             (854, "480p"),
             (640, "360p"),
         ]
 
-        resolutions = [
+        resolutions: list[tuple[int, str]] = [
             (w, n)
             for w, n in all_resolutions
             if w <= original_width
         ]
 
-        created_versions = []
+        created_versions: list[
+            tuple[str, int, str]
+        ] = []
         for width, name in resolutions:
-            output_path = f"web_video_{name}.mp4"
+            output_path: str = (
+                f"web_video_{name}.mp4"
+            )
             print(
                 f"   Creating {name} version ({width}px wide)..."
             )
@@ -168,7 +183,7 @@ async def process_for_web(input_video: str):
             "   Placeholder for future implementation:"
         )
 
-        thumbnail_times = [
+        thumbnail_times: list[float] = [
             0,
             info["duration"] / 4,
             info["duration"] / 2,
@@ -231,21 +246,23 @@ async def process_for_web(input_video: str):
 
 async def batch_process_directory(
     directory: str = ".",
-):
-    """
-    Process all videos in a directory for web deployment.
+) -> None:
+    """Process all videos in a directory for web deployment.
+
+    Scans the specified directory for video files and processes each one
+    for web deployment using the process_for_web function.
 
     Args:
-        directory: Directory containing video files
+        directory: Directory path containing video files to process.
     """
-    video_extensions = [
+    video_extensions: list[str] = [
         ".mp4",
         ".avi",
         ".mov",
         ".mkv",
         ".webm",
     ]
-    videos = []
+    videos: list[Path] = []
 
     # Find all video files
     for file in Path(directory).iterdir():
@@ -270,7 +287,7 @@ async def batch_process_directory(
 
     # Process each video
     for i, video in enumerate(videos, 1):
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(
             f"Processing video {i}/{len(videos)}: {video.name}"
         )
@@ -279,10 +296,13 @@ async def batch_process_directory(
         await process_for_web(str(video))
 
 
-def main():
-    """Run the web processing example."""
-    import sys
+def main() -> None:
+    """Run the web processing example.
 
+    Processes command line arguments to determine whether to process a single
+    video file or all videos in the current directory. Handles keyboard
+    interrupts gracefully and reports any errors.
+    """
     print(
         "=== VFX MCP Web Video Processing Example ==="
     )
