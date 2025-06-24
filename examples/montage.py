@@ -38,7 +38,9 @@ async def create_montage() -> None:
 
         # Define source clips with (filename, start_time, duration) tuples
         # In a real scenario, these would be actual video files
-        clips_to_extract: list[tuple[str, int, int]] = [
+        clips_to_extract: list[
+            tuple[str, int, int]
+        ] = [
             (
                 "vacation.mp4",
                 30,
@@ -57,7 +59,9 @@ async def create_montage() -> None:
         ]
 
         # Step 1: Trim clips from source videos
-        print("\n1. Extracting clips from source videos...")
+        print(
+            "\n1. Extracting clips from source videos..."
+        )
         clips: list[str] = []
 
         for i, (
@@ -69,13 +73,17 @@ async def create_montage() -> None:
 
             # Check if source video exists
             if not Path(video).exists():
-                print(f"   ⚠️  Skipping {video} (file not found)")
+                print(
+                    f"   ⚠️  Skipping {video} (file not found)"
+                )
                 continue
 
-            print(f"   Trimming {video} from {start}s for {duration}s...")
+            print(
+                f"   Trimming {video} from {start}s for {duration}s..."
+            )
 
             try:
-                await client.call_tool(
+                _ = await client.call_tool(
                     "trim_video",
                     {
                         "input_path": video,
@@ -87,37 +95,49 @@ async def create_montage() -> None:
                 clips.append(clip_path)
                 print(f"   ✓ Created {clip_path}")
             except Exception as e:
-                print(f"   ✗ Error trimming {video}: {e}")
+                print(
+                    f"   ✗ Error trimming {video}: {e}"
+                )
 
         if len(clips) < 2:
-            print("\n❌ Not enough clips to create montage (need at least 2)")
+            print(
+                "\n❌ Not enough clips to create montage (need at least 2)"
+            )
             return
 
         # Step 2: Concatenate the clips
-        print(f"\n2. Concatenating {len(clips)} clips...")
+        print(
+            f"\n2. Concatenating {len(clips)} clips..."
+        )
         montage_path: str = "montage.mp4"
 
         try:
-            await client.call_tool(
+            _ = await client.call_tool(
                 "concatenate_videos",
                 {
                     "input_paths": clips,
                     "output_path": montage_path,
                 },
             )
-            print(f"   ✓ Created montage: {montage_path}")
+            print(
+                f"   ✓ Created montage: {montage_path}"
+            )
         except Exception as e:
-            print(f"   ✗ Error concatenating videos: {e}")
+            print(
+                f"   ✗ Error concatenating videos: {e}"
+            )
             return
 
         # Step 3: Add background music (if available)
         music_path: str = "background_music.mp3"
         if Path(music_path).exists():
-            print("\n3. Adding background music...")
+            print(
+                "\n3. Adding background music..."
+            )
             final_path: str = "final_montage.mp4"
 
             try:
-                await client.call_tool(
+                _ = await client.call_tool(
                     "add_audio",
                     {
                         "video_path": montage_path,
@@ -125,11 +145,17 @@ async def create_montage() -> None:
                         "output_path": final_path,
                     },
                 )
-                print(f"   ✓ Created final montage with music: {final_path}")
+                print(
+                    f"   ✓ Created final montage with music: {final_path}"
+                )
             except Exception as e:
-                print(f"   ✗ Error adding audio: {e}")
+                print(
+                    f"   ✗ Error adding audio: {e}"
+                )
         else:
-            print(f"\n3. Skipping background music ('{music_path}' not found)")
+            print(
+                f"\n3. Skipping background music ('{music_path}' not found)"
+            )
             final_path: str = montage_path
 
         # Step 4: Get information about the final video
@@ -141,21 +167,29 @@ async def create_montage() -> None:
             )
 
             # Parse the result from MCP response
-            if hasattr(info.content[0], "text"):
+            if info.content and hasattr(info.content[0], "text"):
                 info_data: dict[str, Any] = json.loads(info.content[0].text)
             else:
-                info_data = info.content[0]
+                info_data = info.content[0] if info.content else {}
 
-            print(f"   Duration: {info_data['duration']:.2f} seconds")
+            print(
+                f"   Duration: {info_data['duration']:.2f} seconds"
+            )
             print(
                 f"   Resolution: {info_data['video']['width']}x"
-                f"{info_data['video']['height']}"
+                + f"{info_data['video']['height']}"
             )
-            print(f"   Video codec: {info_data['video']['codec']}")
+            print(
+                f"   Video codec: {info_data['video']['codec']}"
+            )
             if "audio" in info_data:
-                print(f"   Audio codec: {info_data['audio']['codec']}")
+                print(
+                    f"   Audio codec: {info_data['audio']['codec']}"
+                )
         except Exception as e:
-            print(f"   ✗ Error getting video info: {e}")
+            print(
+                f"   ✗ Error getting video info: {e}"
+            )
 
         print("\n✅ Montage creation complete!")
 
@@ -169,7 +203,9 @@ def main() -> None:
     print("=== VFX MCP Video Montage Example ===")
     print("\nThis example requires:")
     print("- The VFX MCP server to be running")
-    print("- Video files: vacation.mp4, birthday.mp4, concert.mp4")
+    print(
+        "- Video files: vacation.mp4, birthday.mp4, concert.mp4"
+    )
     print("- Optional: background_music.mp3")
     print("\nPress Ctrl+C to cancel\n")
 

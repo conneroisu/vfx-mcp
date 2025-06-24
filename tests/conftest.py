@@ -36,7 +36,9 @@ def temp_dir() -> Generator[Path]:
         yield Path(temp_path)
     finally:
         # Cleanup after test completes
-        shutil.rmtree(temp_path, ignore_errors=True)
+        shutil.rmtree(
+            temp_path, ignore_errors=True
+        )
 
 
 @pytest.fixture
@@ -53,7 +55,9 @@ def sample_video(temp_dir: Path) -> Path:
     Returns:
         Path to the generated test video file.
     """
-    output_path: Path = temp_dir / "test_video.mp4"
+    output_path: Path = (
+        temp_dir / "test_video.mp4"
+    )
 
     # Generate test video using lavfi (libavfilter) virtual input devices
     # testsrc creates color bars pattern, sine creates audio tone
@@ -61,7 +65,9 @@ def sample_video(temp_dir: Path) -> Path:
         "testsrc=duration=5:size=1280x720:rate=30",
         f="lavfi",
     )
-    audio_input = ffmpeg.input("sine=frequency=440:duration=5", f="lavfi")
+    audio_input = ffmpeg.input(
+        "sine=frequency=440:duration=5", f="lavfi"
+    )
 
     # Combine video and audio into MP4 container
     (
@@ -105,7 +111,9 @@ def sample_videos(temp_dir: Path) -> list[Path]:
     ]
 
     for i, pattern in enumerate(patterns):
-        output_path: Path = temp_dir / f"test_video_{i}.mp4"
+        output_path: Path = (
+            temp_dir / f"test_video_{i}.mp4"
+        )
 
         # Generate 2-second test videos with different patterns
         # Using ultrafast preset for faster test execution
@@ -142,7 +150,9 @@ def sample_audio(temp_dir: Path) -> Path:
     Returns:
         Path to the generated audio file.
     """
-    output_path: Path = temp_dir / "test_audio.mp3"
+    output_path: Path = (
+        temp_dir / "test_audio.mp3"
+    )
 
     # Generate a 3-second 440Hz sine wave (A4 musical note)
     # Using lavfi sine generator for consistent test audio

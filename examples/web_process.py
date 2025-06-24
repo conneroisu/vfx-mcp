@@ -40,11 +40,15 @@ async def process_for_web(
     3. Generating thumbnail images at key timestamps
     """
     async with Client("python main.py") as client:
-        print(f"Processing '{input_video}' for web deployment...")
+        print(
+            f"Processing '{input_video}' for web deployment..."
+        )
 
         # Check if input exists
         if not Path(input_video).exists():
-            print(f"❌ Error: '{input_video}' not found")
+            print(
+                f"❌ Error: '{input_video}' not found"
+            )
             return
 
         # Get original video info
@@ -56,34 +60,46 @@ async def process_for_web(
             )
 
             # Parse the result from MCP response
-            if hasattr(info_result.content[0], "text"):
+            if info_result.content and hasattr(info_result.content[0], "text"):
                 info: dict[str, Any] = json.loads(info_result.content[0].text)
             else:
-                info = info_result.content[0]
+                info = info_result.content[0] if info_result.content else {}
 
             print(
                 f"   Original resolution: {info['video']['width']}x"
-                f"{info['video']['height']}"
+                + f"{info['video']['height']}"
             )
-            print(f"   Duration: {info['duration']:.2f} seconds")
+            print(
+                f"   Duration: {info['duration']:.2f} seconds"
+            )
             print(f"   Format: {info['format']}")
-            original_width: int = info["video"]["width"]
+            original_width: int = info["video"][
+                "width"
+            ]
         except Exception as e:
-            print(f"   ✗ Error getting video info: {e}")
+            print(
+                f"   ✗ Error getting video info: {e}"
+            )
             return
 
         # Step 1: Convert to web-friendly format
-        print("\n2. Converting to web-optimized format...")
+        print(
+            "\n2. Converting to web-optimized format..."
+        )
         web_video: str = "web_optimized.mp4"
 
         # Note: In the current implementation, convert_format is not available
         # This is a placeholder for when the tool is implemented
-        print("   ⚠️  Format conversion not yet implemented")
-        print("   Using resize as a workaround to re-encode...")
+        print(
+            "   ⚠️  Format conversion not yet implemented"
+        )
+        print(
+            "   Using resize as a workaround to re-encode..."
+        )
 
         try:
             # Use resize with same dimensions to trigger re-encoding
-            await client.call_tool(
+            _ = await client.call_tool(
                 "resize_video",
                 {
                     "input_path": input_video,
@@ -91,13 +107,19 @@ async def process_for_web(
                     "width": original_width,
                 },
             )
-            print(f"   ✓ Created web-optimized video: {web_video}")
+            print(
+                f"   ✓ Created web-optimized video: {web_video}"
+            )
         except Exception as e:
-            print(f"   ✗ Error optimizing video: {e}")
+            print(
+                f"   ✗ Error optimizing video: {e}"
+            )
             web_video = input_video  # Fall back to original
 
         # Step 2: Create multiple resolutions
-        print("\n3. Creating multiple resolutions...")
+        print(
+            "\n3. Creating multiple resolutions..."
+        )
 
         # Define target resolutions (width, name)
         # Only create resolutions smaller than or equal to the original
@@ -109,16 +131,24 @@ async def process_for_web(
         ]
 
         resolutions: list[tuple[int, str]] = [
-            (w, n) for w, n in all_resolutions if w <= original_width
+            (w, n)
+            for w, n in all_resolutions
+            if w <= original_width
         ]
 
-        created_versions: list[tuple[str, int, str]] = []
+        created_versions: list[
+            tuple[str, int, str]
+        ] = []
         for width, name in resolutions:
-            output_path: str = f"web_video_{name}.mp4"
-            print(f"   Creating {name} version ({width}px wide)...")
+            output_path: str = (
+                f"web_video_{name}.mp4"
+            )
+            print(
+                f"   Creating {name} version ({width}px wide)..."
+            )
 
             try:
-                await client.call_tool(
+                _ = await client.call_tool(
                     "resize_video",
                     {
                         "input_path": web_video,
@@ -126,37 +156,63 @@ async def process_for_web(
                         "width": width,
                     },
                 )
-                created_versions.append((output_path, width, name))
-                print(f"   ✓ Created {output_path}")
+                created_versions.append(
+                    (output_path, width, name)
+                )
+                print(
+                    f"   ✓ Created {output_path}"
+                )
             except Exception as e:
-                print(f"   ✗ Error creating {name} version: {e}")
+                print(
+                    f"   ✗ Error creating {name} version: {e}"
+                )
 
         # Step 3: Generate thumbnails
         print("\n4. Generating thumbnails...")
 
         # Note: In the current implementation, generate_thumbnail is not available
         # This is a placeholder for when the tool is implemented
-        print("   ⚠️  Thumbnail generation not yet implemented")
-        print("   Placeholder for future implementation:")
+        print(
+            "   ⚠️  Thumbnail generation not yet implemented"
+        )
+        print(
+            "   Placeholder for future implementation:"
+        )
 
         thumbnail_times: list[float] = [
             0,
             info["duration"] / 4,
             info["duration"] / 2,
         ]
-        for i, timestamp in enumerate(thumbnail_times):
-            print(f"   Would generate thumbnail_{i}.jpg at {timestamp:.1f}s")
+        for i, timestamp in enumerate(
+            thumbnail_times
+        ):
+            print(
+                f"   Would generate thumbnail_{i}.jpg at {timestamp:.1f}s"
+            )
 
         # Step 4: Create adaptive streaming manifest (placeholder)
-        print("\n5. Adaptive streaming preparation:")
-        print("   For HLS or DASH streaming, you would:")
-        print("   - Segment each resolution version")
-        print("   - Create manifest files (.m3u8 or .mpd)")
-        print("   - Set up proper CORS headers on your web server")
+        print(
+            "\n5. Adaptive streaming preparation:"
+        )
+        print(
+            "   For HLS or DASH streaming, you would:"
+        )
+        print(
+            "   - Segment each resolution version"
+        )
+        print(
+            "   - Create manifest files (.m3u8 or .mpd)"
+        )
+        print(
+            "   - Set up proper CORS headers on your web server"
+        )
 
         # Summary
         print("\n✅ Web processing complete!")
-        print(f"\nCreated {len(created_versions)} resolution versions:")
+        print(
+            f"\nCreated {len(created_versions)} resolution versions:"
+        )
         for (
             path,
             _width,
@@ -167,13 +223,19 @@ async def process_for_web(
         # Sample HTML5 video player code
         print("\nSample HTML5 video element:")
         print("```html")
-        print('<video controls width="100%" poster="thumbnail_1.jpg">')
-        for path, width, _name in reversed(created_versions):
+        print(
+            '<video controls width="100%" poster="thumbnail_1.jpg">'
+        )
+        for path, width, _name in reversed(
+            created_versions
+        ):
             print(
                 f'  <source src="{path}" type="video/mp4" '
-                f'media="(min-width: {width}px)">'
+                + f'media="(min-width: {width}px)">'
             )
-        print("  Your browser does not support the video tag.")
+        print(
+            "  Your browser does not support the video tag."
+        )
         print("</video>")
         print("```")
 
@@ -200,21 +262,31 @@ async def batch_process_directory(
 
     # Find all video files
     for file in Path(directory).iterdir():
-        if file.is_file() and file.suffix.lower() in video_extensions:
+        if (
+            file.is_file()
+            and file.suffix.lower()
+            in video_extensions
+        ):
             videos.append(file)
 
     if not videos:
-        print(f"No video files found in '{directory}'")
+        print(
+            f"No video files found in '{directory}'"
+        )
         return
 
-    print(f"Found {len(videos)} video(s) to process:")
+    print(
+        f"Found {len(videos)} video(s) to process:"
+    )
     for video in videos:
         print(f"  - {video.name}")
 
     # Process each video
     for i, video in enumerate(videos, 1):
         print(f"\n{'=' * 50}")
-        print(f"Processing video {i}/{len(videos)}: {video.name}")
+        print(
+            f"Processing video {i}/{len(videos)}: {video.name}"
+        )
         print("=" * 50)
 
         await process_for_web(str(video))
@@ -227,16 +299,22 @@ def main() -> None:
     video file or all videos in the current directory. Handles keyboard
     interrupts gracefully and reports any errors.
     """
-    print("=== VFX MCP Web Video Processing Example ===")
+    print(
+        "=== VFX MCP Web Video Processing Example ==="
+    )
     print("\nUsage:")
     print("  python web_process.py [video_file]")
-    print("  python web_process.py  # Process all videos in current directory")
+    print(
+        "  python web_process.py  # Process all videos in current directory"
+    )
     print("\nPress Ctrl+C to cancel\n")
 
     try:
         if len(sys.argv) > 1:
             # Process specific video
-            asyncio.run(process_for_web(sys.argv[1]))
+            asyncio.run(
+                process_for_web(sys.argv[1])
+            )
         else:
             # Process all videos in current directory
             asyncio.run(batch_process_directory())

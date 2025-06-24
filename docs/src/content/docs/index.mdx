@@ -1,0 +1,140 @@
+---
+title: VFX MCP Server
+description: Professional video editing MCP server with 35+ tools for AI-powered video manipulation and processing workflows.
+template: splash
+hero:
+  tagline: Professional AI-powered video editing at your fingertips
+  image:
+    file: ../../assets/logo.png
+  actions:
+    - text: Get Started
+      link: /getting-started/installation/
+      icon: right-arrow
+      variant: primary
+    - text: View Tools
+      link: /tools/overview/
+      icon: document
+    - text: GitHub
+      link: https://github.com/conneroisu/vfx-mcp
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<div class="hero">
+  <h2>🎬 Professional Video Editing for AI</h2>
+  <p>A comprehensive MCP (Model Context Protocol) server that provides 35+ professional video editing tools, enabling AI assistants to perform sophisticated video manipulation, effects, and processing tasks.</p>
+</div>
+
+## 🚀 Key Features
+
+<CardGrid stagger>
+  <Card title="35+ Video Tools" icon="puzzle">
+    Complete toolkit for video editing, from basic trimming to advanced VFX and compositing operations.
+  </Card>
+  <Card title="AI-Powered Workflows" icon="rocket">
+    Built specifically for AI assistants with MCP protocol support for seamless integration.
+  </Card>
+  <Card title="FFmpeg Backend" icon="setting">
+    Powered by FFmpeg for professional-grade video processing with robust error handling.
+  </Card>
+  <Card title="Batch Processing" icon="list-format">
+    Automated batch operations for processing multiple videos with consistent settings.
+  </Card>
+</CardGrid>
+
+## 🛠️ Tool Categories
+
+<div class="tool-category-grid">
+  <div class="tool-category-card">
+    <h3>Basic Operations <span class="tool-count">4 tools</span></h3>
+    <p>Essential video manipulation: trim, resize, concatenate, and metadata extraction.</p>
+  </div>
+  
+  <div class="tool-category-card">
+    <h3>Audio Processing <span class="tool-count">4 tools</span></h3>
+    <p>Complete audio toolkit: extraction, mixing, spectrum analysis, and track merging.</p>
+  </div>
+  
+  <div class="tool-category-card">
+    <h3>Effects & Filters <span class="tool-count">5 tools</span></h3>
+    <p>Professional enhancement: color grading, motion blur, stabilization, and custom filters.</p>
+  </div>
+  
+  <div class="tool-category-card">
+    <h3>Advanced Operations <span class="tool-count">10 tools</span></h3>
+    <p>Sophisticated editing: slideshow creation, mosaic layouts, picture-in-picture, and transitions.</p>
+  </div>
+  
+  <div class="tool-category-card">
+    <h3>Analysis & Extraction <span class="tool-count">4 tools</span></h3>
+    <p>Content analysis: frame extraction, scene detection, statistics, and color analysis.</p>
+  </div>
+  
+  <div class="tool-category-card">
+    <h3>Specialized Effects <span class="tool-count">4 tools</span></h3>
+    <p>Professional VFX: green screen, particle systems, 3D transforms, and lens effects.</p>
+  </div>
+</div>
+
+## 🎯 Quick Start
+
+<CardGrid>
+  <Card title="1. Install Dependencies" icon="add-document">
+    ```bash
+    # Using Nix (recommended)
+    nix develop
+    
+    # Or with pip
+    uv sync
+    ```
+  </Card>
+  <Card title="2. Run the Server" icon="rocket">
+    ```bash
+    # Start the MCP server
+    uv run python main.py
+    
+    # Server runs on stdio transport
+    # Ready for MCP client connections
+    ```
+  </Card>
+  <Card title="3. Connect Your AI" icon="puzzle">
+    Configure your AI assistant (Claude Desktop, Custom MCP client) to connect to the server and start editing videos with natural language commands.
+  </Card>
+</CardGrid>
+
+## 🔧 MCP Integration
+
+This server implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, enabling seamless integration with AI assistants and applications. The server provides:
+
+- **35+ video editing tools** accessible via natural language
+- **Resource endpoints** for file discovery and metadata
+- **Streaming progress updates** for long-running operations
+- **Error handling** with detailed feedback
+
+## 📚 What's Next?
+
+<CardGrid stagger>
+  <Card title="Explore Tools" icon="open-book">
+    Browse the complete [tool reference](/tools/overview/) to see all available video editing capabilities.
+  </Card>
+  <Card title="MCP Setup" icon="setting">
+    Learn how to [integrate with Claude Desktop](/getting-started/mcp-integration/) and other MCP clients.
+  </Card>
+  <Card title="Common Workflows" icon="document">
+    Follow our [video editing guides](/guides/common-workflows/) for typical video production tasks.
+  </Card>
+  <Card title="API Reference" icon="information">
+    Dive into the [API documentation](/api/tool-signatures/) for detailed technical information.
+  </Card>
+</CardGrid>
+
+---
+
+<div style="text-align: center; margin-top: 3rem; padding: 2rem; background: var(--sl-color-gray-1); border-radius: 8px;">
+  <h3>🎥 Ready to Transform Your Video Editing Workflow?</h3>
+  <p>Get started with the VFX MCP Server and unlock the power of AI-assisted video production.</p>
+  <a href="/getting-started/installation/" style="display: inline-block; background: var(--sl-color-accent); color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 1rem;">
+    Start Building →
+  </a>
+</div>
