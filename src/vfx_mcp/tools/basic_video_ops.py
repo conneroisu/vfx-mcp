@@ -238,3 +238,59 @@ def register_basic_video_tools(
             return f"Videos concatenated successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+
+    @mcp.tool
+    async def image_to_video(
+        image_path: str,
+        output_path: str,
+        duration: float,
+        framerate: int = 30,
+        ctx: Context | None = None,
+    ) -> str:
+        """Create a video from a static image for a specified duration.
+
+        Converts a static image into a video by displaying the image for the
+        specified duration. The output will be a video file with the given
+        framerate showing the same image throughout.
+
+        Args:
+            image_path: Path to the input image file (supports common formats).
+            output_path: Path where the video will be saved.
+            duration: Duration of the video in seconds.
+            framerate: Framerate of the output video (default: 30 fps).
+            ctx: MCP context for progress reporting and logging.
+
+        Returns:
+            Success message indicating the video was created and saved.
+
+        Raises:
+            ValueError: If duration is not positive or framerate is invalid.
+            RuntimeError: If ffmpeg encounters an error during processing.
+        """
+        if duration <= 0:
+            raise ValueError("Duration must be positive")
+        
+        if framerate <= 0 or framerate > 120:
+            raise ValueError("Framerate must be between 1 and 120 fps")
+
+        await log_operation(
+            ctx,
+            f"Creating {duration}s video from image at {framerate} fps",
+        )
+
+        try:
+            stream = ffmpeg.input(
+                image_path,
+                loop=1,
+                t=duration,
+                framerate=framerate,
+            )
+            output = create_standard_output(
+                stream, output_path
+            )
+            ffmpeg.run(
+                output, overwrite_output=True
+            )
+            return f"Video created successfully and saved to {output_path}"
+        except ffmpeg.Error as e:
+            await handle_ffmpeg_error(e, ctx)

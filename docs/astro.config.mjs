@@ -9,7 +9,7 @@ export default defineConfig({
 			title: 'VFX MCP Server',
 			description: 'Professional video editing MCP server with 35+ tools for AI-powered video manipulation',
 			logo: {
-				src: './src/assets/logo.png',
+				src: './src/assets/logo.svg',
 			},
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/conneroisu/vfx-mcp' },
