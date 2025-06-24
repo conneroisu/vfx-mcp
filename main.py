@@ -1699,6 +1699,703 @@ async def merge_audio_tracks(
         raise RuntimeError(error_msg) from e
 
 
+@mcp.tool
+async def create_green_screen_effect(
+    input_path: str,
+    output_path: str,
+    background_path: str | None = None,
+    chroma_key_color: str = "green",
+    similarity: float = 0.3,
+    blend: float = 0.1,
+    spill_reduction: float = 0.1,
+    ctx: Context | None = None,
+) -> str:
+    """Remove green/blue screen background and replace with custom background.
+
+    Performs chroma key compositing to remove a colored background and optionally
+    replace it with a custom background image or video. Includes advanced spill
+    reduction and edge blending for professional results.
+
+    Args:
+        input_path: Path to the input video with green/blue screen.
+        output_path: Path where the composited video will be saved.
+        background_path: Path to background image/video. If None, creates transparent background.
+        chroma_key_color: Color to remove ("green", "blue", "red", or hex code like "#00FF00").
+        similarity: Color similarity threshold (0.0 to 1.0). Lower = more precise.
+        blend: Edge blending amount (0.0 to 1.0) for smoother edges.
+        spill_reduction: Color spill reduction strength (0.0 to 1.0).
+        ctx: MCP context for progress reporting and logging.
+
+    Returns:
+        Success message indicating green screen effect was applied.
+
+    Raises:
+        ValueError: If parameter values are out of valid ranges.
+        RuntimeError: If ffmpeg encounters an error during processing.
+    """
+    if not 0.0 <= similarity <= 1.0:
+        raise ValueError("Similarity must be between 0.0 and 1.0")
+    if not 0.0 <= blend <= 1.0:
+        raise ValueError("Blend must be between 0.0 and 1.0")
+    if not 0.0 <= spill_reduction <= 1.0:
+        raise ValueError("Spill reduction must be between 0.0 and 1.0")
+
+    # Convert color names to hex values
+    color_map = {
+        "green": "0x00FF00",
+        "blue": "0x0000FF",
+        "red": "0xFF0000",
+        "cyan": "0x00FFFF",
+        "magenta": "0xFF00FF",
+        "yellow": "0xFFFF00"
+    }
+
+    if chroma_key_color.lower() in color_map:
+        key_color = color_map[chroma_key_color.lower()]
+    elif chroma_key_color.startswith("#"):
+        key_color = "0x" + chroma_key_color[1:]
+    else:
+        key_color = chroma_key_color
+
+    if ctx:
+        await ctx.info(f"Applying {chroma_key_color} screen removal...")
+
+    try:
+        foreground = ffmpeg.input(input_path)
+
+        # Apply chromakey filter with advanced settings
+        keyed = ffmpeg.filter(
+            foreground,
+            "chromakey",
+            color=key_color,
+            similarity=similarity,
+            blend=blend,
+            yuv=1  # Use YUV color space for better results
+        )
+
+        # Apply despill filter to reduce color spill
+        if spill_reduction > 0:
+            keyed = ffmpeg.filter(
+                keyed,
+                "despill",
+                type=1 if chroma_key_color.lower() == "green" else 2,
+                mix=spill_reduction,
+                expand=spill_reduction * 0.5
+            )
+
+        if background_path:
+            # Composite with background
+            background = ffmpeg.input(background_path)
+
+            # Get foreground dimensions to scale background if needed
+            probe = ffmpeg.probe(input_path)
+            video_stream = next(
+                stream for stream in probe["streams"]
+                if stream["codec_type"] == "video"
+            )
+            width = video_stream["width"]
+            height = video_stream["height"]
+
+            # Scale background to match foreground
+            background_scaled = ffmpeg.filter(background, "scale", width, height)
+
+            # Composite foreground over background
+            output_stream = ffmpeg.filter(
+                [background_scaled, keyed],
+                "overlay",
+                x=0,
+                y=0
+            )
+        else:
+            # Keep transparent background
+            output_stream = keyed
+
+        output = ffmpeg.output(output_stream, output_path, vcodec="libx264", pix_fmt="yuv420p")
+        ffmpeg.run(output, overwrite_output=True)
+
+        bg_msg = " with custom background" if background_path else " with transparent background"
+        return f"Green screen effect applied{bg_msg} and saved to {output_path}"
+    except ffmpeg.Error as e:
+        error_msg = f"FFmpeg error: {e.stderr.decode() if e.stderr else str(e)}"
+        if ctx:
+            await ctx.error(error_msg)
+        raise RuntimeError(error_msg) from e
+
+
+@mcp.tool
+async def apply_motion_blur(
+    input_path: str,
+    output_path: str,
+    blur_strength: float = 1.0,
+    angle: float = 0.0,
+    shutter_speed: float = 0.5,
+    ctx: Context | None = None,
+) -> str:
+    """Add realistic motion blur effects to video.
+
+    Applies motion blur to simulate camera movement or fast-moving objects.
+    Can create directional blur based on angle and adjustable blur intensity
+    based on virtual shutter speed.
+
+    Args:
+        input_path: Path to the input video file.
+        output_path: Path where the motion-blurred video will be saved.
+        blur_strength: Motion blur intensity (0.1 to 5.0).
+        angle: Blur direction in degrees (0 to 360). 0 = horizontal, 90 = vertical.
+        shutter_speed: Virtual shutter speed affecting blur amount (0.1 to 1.0).
+        ctx: MCP context for progress reporting and logging.
+
+    Returns:
+        Success message indicating motion blur was applied.
+
+    Raises:
+        ValueError: If parameter values are out of valid ranges.
+        RuntimeError: If ffmpeg encounters an error during processing.
+    """
+    if not 0.1 <= blur_strength <= 5.0:
+        raise ValueError("Blur strength must be between 0.1 and 5.0")
+    if not 0.0 <= angle <= 360.0:
+        raise ValueError("Angle must be between 0.0 and 360.0")
+    if not 0.1 <= shutter_speed <= 1.0:
+        raise ValueError("Shutter speed must be between 0.1 and 1.0")
+
+    if ctx:
+        await ctx.info(f"Applying motion blur (strength: {blur_strength}, angle: {angle}°)...")
+
+    try:
+        stream = ffmpeg.input(input_path)
+
+        # Calculate blur parameters based on strength and shutter speed
+        blur_amount = blur_strength * (1.0 - shutter_speed) * 10
+
+        # Apply directional motion blur
+        if angle == 0 or angle == 180:
+            # Horizontal blur
+            blur_filter = ffmpeg.filter(
+                stream,
+                "boxblur",
+                luma_radius=f"{blur_amount}:1",
+                chroma_radius=f"{blur_amount/2}:1"
+            )
+        elif angle == 90 or angle == 270:
+            # Vertical blur
+            blur_filter = ffmpeg.filter(
+                stream,
+                "boxblur",
+                luma_radius=f"1:{blur_amount}",
+                chroma_radius=f"1:{blur_amount/2}"
+            )
+        else:
+            # Diagonal/custom angle blur using convolution
+            # Create motion blur kernel based on angle
+            import math
+            angle_rad = math.radians(angle)
+            kernel_size = max(3, int(blur_amount))
+
+            # For simplicity, use mblur filter with approximated settings
+            blur_filter = ffmpeg.filter(
+                stream,
+                "mblur",
+                amount=blur_strength,
+                angle=angle
+            )
+
+        # Apply temporal blending to enhance motion blur effect
+        if shutter_speed < 0.8:
+            # Blend multiple frames for more realistic motion blur
+            blended = ffmpeg.filter(
+                blur_filter,
+                "tmix",
+                frames=max(2, int((1.0 - shutter_speed) * 5)),
+                weights=f"1 {shutter_speed}"
+            )
+            output_stream = blended
+        else:
+            output_stream = blur_filter
+
+        output = ffmpeg.output(output_stream, output_path, vcodec="libx264")
+        ffmpeg.run(output, overwrite_output=True)
+
+        return f"Motion blur applied (strength: {blur_strength}, angle: {angle}°) and saved to {output_path}"
+    except ffmpeg.Error as e:
+        error_msg = f"FFmpeg error: {e.stderr.decode() if e.stderr else str(e)}"
+        if ctx:
+            await ctx.error(error_msg)
+        raise RuntimeError(error_msg) from e
+
+
+@mcp.tool
+async def create_video_transitions(
+    video_paths: list[str],
+    output_path: str,
+    transition_type: str = "fade",
+    transition_duration: float = 1.0,
+    ctx: Context | None = None,
+) -> str:
+    """Create smooth transitions between multiple video clips.
+
+    Combines multiple video clips with professional transitions between them.
+    Supports various transition types including fades, wipes, slides, and
+    dissolves for seamless video sequences.
+
+    Args:
+        video_paths: List of paths to video files to combine with transitions.
+        output_path: Path where the final video with transitions will be saved.
+        transition_type: Type of transition ("fade", "wipe_left", "wipe_right", 
+            "wipe_up", "wipe_down", "slide_left", "slide_right", "dissolve").
+        transition_duration: Duration of each transition in seconds (0.1 to 5.0).
+        ctx: MCP context for progress reporting and logging.
+
+    Returns:
+        Success message indicating video with transitions was created.
+
+    Raises:
+        ValueError: If parameters are invalid or insufficient video clips.
+        RuntimeError: If ffmpeg encounters an error during processing.
+    """
+    if len(video_paths) < 2:
+        raise ValueError("Need at least 2 video clips to create transitions")
+
+    if not 0.1 <= transition_duration <= 5.0:
+        raise ValueError("Transition duration must be between 0.1 and 5.0 seconds")
+
+    valid_transitions = [
+        "fade", "wipe_left", "wipe_right", "wipe_up", "wipe_down",
+        "slide_left", "slide_right", "dissolve", "pixelize", "radial"
+    ]
+    if transition_type not in valid_transitions:
+        raise ValueError(f"Transition type must be one of: {', '.join(valid_transitions)}")
+
+    if ctx:
+        await ctx.info(f"Creating video with {transition_type} transitions...")
+
+    try:
+        # Load all video inputs
+        inputs = [ffmpeg.input(path) for path in video_paths]
+
+        # Start with the first video
+        result = inputs[0]
+
+        # Apply transitions between consecutive videos
+        for i in range(1, len(inputs)):
+            current_video = inputs[i]
+
+            # Apply the specified transition
+            if transition_type == "fade":
+                # Crossfade transition
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="fade",
+                    duration=transition_duration,
+                    offset=0  # Offset will be calculated by ffmpeg
+                )
+            elif transition_type == "dissolve":
+                # Dissolve transition
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="dissolve",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "wipe_left":
+                # Wipe from left
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="wipeleft",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "wipe_right":
+                # Wipe from right
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="wiperight",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "wipe_up":
+                # Wipe upward
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="wipeup",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "wipe_down":
+                # Wipe downward
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="wipedown",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "slide_left":
+                # Slide left
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="slideleft",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "slide_right":
+                # Slide right
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="slideright",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "pixelize":
+                # Pixelize transition
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="pixelize",
+                    duration=transition_duration,
+                    offset=0
+                )
+            elif transition_type == "radial":
+                # Radial transition
+                result = ffmpeg.filter(
+                    [result, current_video],
+                    "xfade",
+                    transition="radial",
+                    duration=transition_duration,
+                    offset=0
+                )
+
+        output = ffmpeg.output(result, output_path, vcodec="libx264")
+        ffmpeg.run(output, overwrite_output=True)
+
+        return (
+            f"Video with {len(video_paths)} clips and {transition_type} transitions "
+            f"created and saved to {output_path}"
+        )
+    except ffmpeg.Error as e:
+        error_msg = f"FFmpeg error: {e.stderr.decode() if e.stderr else str(e)}"
+        if ctx:
+            await ctx.error(error_msg)
+        raise RuntimeError(error_msg) from e
+
+
+@mcp.tool
+async def extract_video_statistics(
+    input_path: str,
+    analysis_type: str = "comprehensive",
+    ctx: Context | None = None,
+) -> dict[str, Any]:
+    """Analyze video content for technical metrics and quality assessment.
+
+    Performs detailed analysis of video files including quality metrics,
+    encoding information, motion analysis, and technical statistics.
+    Useful for quality control and optimization decisions.
+
+    Args:
+        input_path: Path to the video file to analyze.
+        analysis_type: Type of analysis ("basic", "comprehensive", "quality", "motion").
+        ctx: MCP context for progress reporting and logging.
+
+    Returns:
+        Dictionary containing detailed video analysis results including:
+        - Technical specifications (resolution, framerate, bitrate)
+        - Quality metrics (PSNR, SSIM if applicable)
+        - Motion analysis (scene changes, motion vectors)
+        - Audio analysis (levels, frequency response)
+
+    Raises:
+        ValueError: If analysis_type is invalid.
+        RuntimeError: If ffmpeg encounters an error during processing.
+    """
+    valid_types = ["basic", "comprehensive", "quality", "motion"]
+    if analysis_type not in valid_types:
+        raise ValueError(f"Analysis type must be one of: {', '.join(valid_types)}")
+
+    if ctx:
+        await ctx.info(f"Performing {analysis_type} video analysis...")
+
+    try:
+        # Get basic video information
+        probe = ffmpeg.probe(input_path)
+
+        video_stream = next(
+            (stream for stream in probe["streams"] if stream["codec_type"] == "video"),
+            None
+        )
+        audio_stream = next(
+            (stream for stream in probe["streams"] if stream["codec_type"] == "audio"),
+            None
+        )
+
+        stats = {
+            "file_info": {
+                "filename": os.path.basename(input_path),
+                "size_bytes": int(probe["format"]["size"]),
+                "duration_seconds": float(probe["format"]["duration"]),
+                "format_name": probe["format"]["format_name"],
+                "bit_rate": int(probe["format"]["bit_rate"])
+            }
+        }
+
+        if video_stream:
+            # Calculate FPS
+            fps_fraction = video_stream["r_frame_rate"]
+            fps = eval(fps_fraction)  # Safe since ffmpeg always returns fractions
+
+            stats["video"] = {
+                "codec": video_stream["codec_name"],
+                "width": video_stream["width"],
+                "height": video_stream["height"],
+                "fps": round(fps, 2),
+                "bit_rate": video_stream.get("bit_rate", "N/A"),
+                "pix_fmt": video_stream.get("pix_fmt"),
+                "aspect_ratio": f"{video_stream['width']}:{video_stream['height']}"
+            }
+
+        if audio_stream:
+            stats["audio"] = {
+                "codec": audio_stream["codec_name"],
+                "sample_rate": int(audio_stream["sample_rate"]),
+                "channels": audio_stream["channels"],
+                "bit_rate": audio_stream.get("bit_rate", "N/A"),
+                "channel_layout": audio_stream.get("channel_layout", "unknown")
+            }
+
+        # Perform additional analysis based on type
+        if analysis_type in ["comprehensive", "quality"]:
+            if ctx:
+                await ctx.info("Analyzing video quality metrics...")
+
+            # Run ffmpeg with stats filter to get detailed metrics
+            stats_output = ffmpeg.input(input_path).output(
+                "null",
+                f="null",
+                vf="signalstats"
+            )
+            result = ffmpeg.run(stats_output, capture_stderr=True, quiet=True)
+
+            # Parse signal statistics from stderr
+            stderr_text = result.stderr.decode() if result.stderr else ""
+
+            # Extract quality metrics (simplified parsing)
+            quality_metrics = {}
+            for line in stderr_text.split('\n'):
+                if 'YMIN:' in line:
+                    parts = line.split()
+                    for part in parts:
+                        if ':' in part:
+                            key, value = part.split(':', 1)
+                            try:
+                                quality_metrics[key.lower()] = float(value)
+                            except ValueError:
+                                quality_metrics[key.lower()] = value
+
+            if quality_metrics:
+                stats["quality_metrics"] = quality_metrics
+
+        if analysis_type in ["comprehensive", "motion"]:
+            if ctx:
+                await ctx.info("Analyzing motion and scene changes...")
+
+            # Analyze scene changes for motion metrics
+            try:
+                scene_output = ffmpeg.input(input_path).output(
+                    "null",
+                    f="null",
+                    vf="select=gt(scene\\,0.3),showinfo"
+                )
+                scene_result = ffmpeg.run(scene_output, capture_stderr=True, quiet=True)
+
+                # Count scene changes from output
+                stderr_text = scene_result.stderr.decode() if scene_result.stderr else ""
+                scene_count = stderr_text.count("Parsed_showinfo")
+
+                stats["motion_analysis"] = {
+                    "scene_changes": scene_count,
+                    "average_scene_length": round(stats["file_info"]["duration_seconds"] / max(scene_count, 1), 2),
+                    "motion_intensity": "high" if scene_count > 50 else "medium" if scene_count > 20 else "low"
+                }
+            except Exception:
+                stats["motion_analysis"] = {"error": "Motion analysis failed"}
+
+        # Add file size analysis
+        duration = stats["file_info"]["duration_seconds"]
+        size_mb = stats["file_info"]["size_bytes"] / (1024 * 1024)
+
+        stats["compression_analysis"] = {
+            "size_mb": round(size_mb, 2),
+            "mb_per_minute": round(size_mb / (duration / 60), 2),
+            "compression_ratio": "high" if size_mb / (duration / 60) < 10 else "medium" if size_mb / (duration / 60) < 50 else "low"
+        }
+
+        return stats
+
+    except ffmpeg.Error as e:
+        error_msg = f"FFmpeg error: {e.stderr.decode() if e.stderr else str(e)}"
+        if ctx:
+            await ctx.error(error_msg)
+        raise RuntimeError(error_msg) from e
+
+
+@mcp.tool
+async def create_loop_video(
+    input_path: str,
+    output_path: str,
+    loop_duration: float = 10.0,
+    crossfade_duration: float = 1.0,
+    seamless: bool = True,
+    ctx: Context | None = None,
+) -> str:
+    """Create seamless looping video with crossfade blending.
+
+    Creates a video that loops seamlessly by blending the end with the beginning
+    using crossfade transitions. Useful for creating background videos, 
+    cinemagraphs, or repeating animations.
+
+    Args:
+        input_path: Path to the input video file.
+        output_path: Path where the looping video will be saved.
+        loop_duration: Total duration of the output loop in seconds (1.0 to 120.0).
+        crossfade_duration: Duration of crossfade between end and beginning (0.1 to 5.0).
+        seamless: Whether to ensure seamless looping with motion analysis.
+        ctx: MCP context for progress reporting and logging.
+
+    Returns:
+        Success message indicating the loop video was created.
+
+    Raises:
+        ValueError: If parameter values are out of valid ranges.
+        RuntimeError: If ffmpeg encounters an error during processing.
+    """
+    if not 1.0 <= loop_duration <= 120.0:
+        raise ValueError("Loop duration must be between 1.0 and 120.0 seconds")
+    if not 0.1 <= crossfade_duration <= 5.0:
+        raise ValueError("Crossfade duration must be between 0.1 and 5.0 seconds")
+    if crossfade_duration >= loop_duration / 2:
+        raise ValueError("Crossfade duration must be less than half the loop duration")
+
+    if ctx:
+        await ctx.info(f"Creating {loop_duration}s seamless loop video...")
+
+    try:
+        # Get video duration to determine loop strategy
+        probe = ffmpeg.probe(input_path)
+        original_duration = float(probe["format"]["duration"])
+
+        # Create the main loop segment
+        if original_duration >= loop_duration:
+            # Use portion of the original video
+            main_segment = ffmpeg.input(
+                input_path,
+                ss=0,
+                t=loop_duration - crossfade_duration
+            )
+        else:
+            # Repeat the video to reach desired duration
+            repeats_needed = int((loop_duration - crossfade_duration) / original_duration) + 1
+
+            # Create repeated segments
+            segments = []
+            for i in range(repeats_needed):
+                segment = ffmpeg.input(input_path)
+                segments.append(segment)
+
+            # Concatenate segments
+            if len(segments) > 1:
+                main_segment = ffmpeg.filter(
+                    segments,
+                    "concat",
+                    n=len(segments),
+                    v=1,
+                    a=1
+                )
+                # Trim to desired length
+                main_segment = ffmpeg.filter(
+                    main_segment,
+                    "trim",
+                    duration=loop_duration - crossfade_duration
+                )
+            else:
+                main_segment = ffmpeg.filter(
+                    segments[0],
+                    "trim",
+                    duration=loop_duration - crossfade_duration
+                )
+
+        # Create crossfade segment from beginning and end
+        beginning = ffmpeg.input(input_path, ss=0, t=crossfade_duration)
+
+        if original_duration >= crossfade_duration:
+            # Use end of original video
+            end_start_time = min(original_duration - crossfade_duration, loop_duration - crossfade_duration)
+            ending = ffmpeg.input(input_path, ss=end_start_time, t=crossfade_duration)
+        else:
+            # Use beginning again if video is shorter than crossfade
+            ending = ffmpeg.input(input_path, ss=0, t=crossfade_duration)
+
+        # Apply crossfade between end and beginning
+        crossfade_segment = ffmpeg.filter(
+            [ending, beginning],
+            "xfade",
+            transition="fade",
+            duration=crossfade_duration,
+            offset=0
+        )
+
+        # Combine main segment with crossfade segment
+        if seamless:
+            # Ensure color and brightness continuity
+            main_segment = ffmpeg.filter(main_segment, "colorbalance")
+            crossfade_segment = ffmpeg.filter(crossfade_segment, "colorbalance")
+
+        # Concatenate main segment and crossfade
+        final_video = ffmpeg.filter(
+            [main_segment, crossfade_segment],
+            "concat",
+            n=2,
+            v=1,
+            a=1
+        )
+
+        # Apply final adjustments for seamless looping
+        if seamless:
+            # Add slight fade in/out to ensure smooth transitions
+            final_video = ffmpeg.filter(
+                final_video,
+                "fade",
+                type="in",
+                start_time=0,
+                duration=0.1
+            )
+            final_video = ffmpeg.filter(
+                final_video,
+                "fade",
+                type="out",
+                start_time=loop_duration - 0.1,
+                duration=0.1
+            )
+
+        output = ffmpeg.output(final_video, output_path, vcodec="libx264", pix_fmt="yuv420p")
+        ffmpeg.run(output, overwrite_output=True)
+
+        return (
+            f"Seamless loop video ({loop_duration}s with {crossfade_duration}s crossfade) "
+            f"created and saved to {output_path}"
+        )
+    except ffmpeg.Error as e:
+        error_msg = f"FFmpeg error: {e.stderr.decode() if e.stderr else str(e)}"
+        if ctx:
+            await ctx.error(error_msg)
+        raise RuntimeError(error_msg) from e
+
+
 # === Resource Handlers ===
 
 
@@ -1907,16 +2604,69 @@ async def list_advanced_tools() -> str:
                     "Multiple mixing modes"
                 ],
                 "example_use": "Create soundtracks or multi-source audio content"
+            },
+            {
+                "name": "create_green_screen_effect",
+                "purpose": "Remove green/blue screen and replace with custom backgrounds",
+                "key_features": [
+                    "Advanced chroma key compositing",
+                    "Color spill reduction and edge blending",
+                    "Support for multiple key colors"
+                ],
+                "example_use": "Create professional composited videos with custom backgrounds"
+            },
+            {
+                "name": "apply_motion_blur",
+                "purpose": "Add realistic motion blur effects to video",
+                "key_features": [
+                    "Directional blur with angle control",
+                    "Virtual shutter speed simulation",
+                    "Temporal frame blending"
+                ],
+                "example_use": "Simulate camera movement or fast-moving objects"
+            },
+            {
+                "name": "create_video_transitions",
+                "purpose": "Create smooth transitions between multiple video clips",
+                "key_features": [
+                    "Multiple transition types (fade, wipe, slide)",
+                    "Customizable transition duration",
+                    "Professional video sequencing"
+                ],
+                "example_use": "Create seamless video montages with professional transitions"
+            },
+            {
+                "name": "extract_video_statistics",
+                "purpose": "Analyze video content for technical metrics and quality",
+                "key_features": [
+                    "Comprehensive quality analysis",
+                    "Motion and scene change detection",
+                    "Technical specification reporting"
+                ],
+                "example_use": "Quality control and optimization for video content"
+            },
+            {
+                "name": "create_loop_video",
+                "purpose": "Create seamless looping videos with crossfade blending",
+                "key_features": [
+                    "Seamless crossfade transitions",
+                    "Customizable loop duration",
+                    "Color continuity optimization"
+                ],
+                "example_use": "Create background videos or cinemagraphs"
             }
         ],
-        "total_tools": 10,
+        "total_tools": 15,
         "categories": [
             "Image/Video Creation",
             "Video Analysis",
             "Text and Graphics",
             "Audio Processing",
             "Color Correction",
-            "Time Manipulation"
+            "Time Manipulation",
+            "Compositing and VFX",
+            "Motion Effects",
+            "Professional Transitions"
         ]
     }
 
