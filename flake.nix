@@ -4,15 +4,28 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, treefmt-nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        
+
+        treefmtEval = treefmt-nix.lib.evalModule pkgs {
+          projectRootFile = "flake.nix";
+          programs = {
+            ruff = {
+              enable = true;
+              format = true;
+            };
+            black.enable = true;
+            alejandra.enable = true;
+          };
+        };
+
         python = pkgs.python313;
-        
+
         pythonEnv = python.withPackages (ps: with ps; [
           # Runtime dependencies (managed by uv)
           pip
@@ -37,29 +50,29 @@
             text = rooted ''
               cd "$REPO_ROOT"
             '';
-            runtimeInputs = with pkgs; [go bun];
+            runtimeInputs = with pkgs; [ go bun ];
             description = "Run all go tests";
           };
           run = {
             text = rooted ''cd "$REPO_ROOT" && air'';
             env.DEBUG = "true";
-            runtimeInputs = with pkgs; [air git];
+            runtimeInputs = with pkgs; [ air git ];
             description = "Run the application with air for hot reloading";
           };
         };
 
         scriptPackages =
           pkgs.lib.mapAttrs
-          (
-            name: script:
-              pkgs.writeShellApplication {
-                inherit name;
-                inherit (script) text;
-                runtimeInputs = script.runtimeInputs or [];
-                runtimeEnv = script.env or {};
-              }
-          )
-          scripts;
+            (
+              name: script:
+                pkgs.writeShellApplication {
+                  inherit name;
+                  inherit (script) text;
+                  runtimeInputs = script.runtimeInputs or [ ];
+                  runtimeEnv = script.env or { };
+                }
+            )
+            scripts;
       in
       {
         devShells.default = pkgs.mkShell {
@@ -67,26 +80,26 @@
             # Python environment
             pythonEnv
             uv
-            
+
             # Video processing
             ffmpeg-full
-            
+
             # Development tools
             ruff
             black
             basedpyright
-            
+
             # Shell utilities
             git
             jq
             ripgrep
-            
+
             # Optional: For advanced video processing
             imagemagick
-            sox  # For audio processing
+            sox # For audio processing
           ]
 
-            ++ builtins.attrValues scriptPackages;
+          ++ builtins.attrValues scriptPackages;
 
           shellHook = ''
             echo "🎬 VFX MCP Development Environment"
@@ -121,16 +134,16 @@
         packages.default = pkgs.python313Packages.buildPythonApplication {
           pname = "vfx-mcp";
           version = "0.1.0";
-          
+
           src = ./.;
-          
+
           propagatedBuildInputs = with pkgs.python313Packages; [
             # Dependencies will be managed by uv/pyproject.toml
           ];
-          
+
           # Use uv for dependency management
           format = "pyproject";
-          
+
           nativeBuildInputs = with pkgs.python313Packages; [
             setuptools
             wheel
@@ -142,5 +155,8 @@
           drv = self.packages.${system}.default;
           exePath = "/bin/vfx-mcp";
         };
+
+        # Formatter output
+        formatter = treefmtEval.config.build.wrapper;
       });
 }
