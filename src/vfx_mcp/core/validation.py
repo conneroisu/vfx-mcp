@@ -11,22 +11,16 @@ def validate_range(
 ) -> None:
     """Validate that a parameter is within the specified range."""
     if not min_val <= value <= max_val:
-        raise ValueError(
-            f"{name} must be between {min_val} and {max_val}"
-        )
+        raise ValueError(f"{name} must be between {min_val} and {max_val}")
 
 
 def validate_file_path(file_path: str) -> Path:
     """Validate that a file path exists and is readable."""
     path = Path(file_path)
     if not path.exists():
-        raise FileNotFoundError(
-            f"File not found: {file_path}"
-        )
+        raise FileNotFoundError(f"File not found: {file_path}")
     if not path.is_file():
-        raise ValueError(
-            f"Path is not a file: {file_path}"
-        )
+        raise ValueError(f"Path is not a file: {file_path}")
     return path
 
 
@@ -40,14 +34,10 @@ def validate_output_path(
     return path
 
 
-def validate_video_paths(
-    video_paths: list[str], min_count: int = 1
-) -> list[Path]:
+def validate_video_paths(video_paths: list[str], min_count: int = 1) -> list[Path]:
     """Validate a list of video file paths."""
     if len(video_paths) < min_count:
-        raise ValueError(
-            f"At least {min_count} video file(s) required"
-        )
+        raise ValueError(f"At least {min_count} video file(s) required")
 
     validated_paths = []
     for path_str in video_paths:

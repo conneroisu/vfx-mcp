@@ -3,8 +3,6 @@ title: Resource Endpoints
 description: MCP resource endpoints for file discovery and metadata access
 ---
 
-# Resource Endpoints
-
 The VFX MCP Server provides several resource endpoints that enable clients to discover available video files, access metadata, and explore server capabilities. These endpoints follow the MCP resource protocol for standardized data access.
 
 ## 📁 Available Resources

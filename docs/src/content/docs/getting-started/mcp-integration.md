@@ -3,8 +3,6 @@ title: MCP Integration
 description: How to integrate the VFX MCP Server with Claude Desktop and other MCP clients
 ---
 
-# MCP Integration
-
 Learn how to connect the VFX MCP Server with various MCP clients, including Claude Desktop, custom applications, and development tools.
 
 ## 🔌 What is MCP?

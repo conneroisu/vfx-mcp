@@ -3,8 +3,6 @@ title: Effects & Filters
 description: Professional-grade video enhancement, color grading, and visual effects tools
 ---
 
-# Effects & Filters
-
 The effects and filters category provides professional-grade video enhancement tools for color correction, motion effects, stabilization, and custom filtering. These tools are essential for creating polished, professional-looking video content.
 
 ## 🎨 Available Tools

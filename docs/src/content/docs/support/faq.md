@@ -3,8 +3,6 @@ title: FAQ
 description: Frequently asked questions about the VFX MCP Server
 ---
 
-# Frequently Asked Questions
-
 Find answers to the most common questions about the VFX MCP Server, including setup, usage, and troubleshooting.
 
 ## 🚀 General Questions

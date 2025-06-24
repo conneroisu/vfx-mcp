@@ -3,8 +3,6 @@ title: Troubleshooting
 description: Common issues and solutions for the VFX MCP Server
 ---
 
-# Troubleshooting
-
 This guide covers common issues you might encounter while using the VFX MCP Server and provides step-by-step solutions to resolve them.
 
 ## 🚨 Installation Issues

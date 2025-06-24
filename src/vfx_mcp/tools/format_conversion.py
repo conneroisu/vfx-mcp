@@ -60,18 +60,14 @@ def register_format_conversion_tools(
             }
 
             if video_bitrate:
-                output_kwargs["video_bitrate"] = (
-                    video_bitrate
-                )
+                output_kwargs["video_bitrate"] = video_bitrate
 
             output = ffmpeg.output(
                 stream,
                 output_path,
                 **output_kwargs,
             )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            ffmpeg.run(output, overwrite_output=True)
             return f"Format converted successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)

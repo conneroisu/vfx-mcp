@@ -3,8 +3,6 @@ title: VFX and Compositing Guide
 description: Advanced visual effects and compositing workflows for professional video production
 ---
 
-# VFX and Compositing Guide
-
 Advanced visual effects and compositing workflows for professional video production using the VFX MCP Server.
 
 ## Visual Effects Pipeline

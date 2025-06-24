@@ -3,8 +3,6 @@ title: Common Workflows
 description: Typical video editing workflows and step-by-step guides for common tasks
 ---
 
-# Common Workflows
-
 This guide covers the most common video editing workflows using the VFX MCP Server. Each workflow includes step-by-step instructions, code examples, and best practices for achieving professional results.
 
 ## 🎬 Basic Video Editing

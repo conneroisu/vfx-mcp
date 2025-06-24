@@ -3,7 +3,6 @@ title: Automation Scripts
 description: Automated video processing workflows and batch operation examples
 ---
 
-# Automation Scripts
 
 Automated video processing workflows and batch operation examples using the VFX MCP Server.
 

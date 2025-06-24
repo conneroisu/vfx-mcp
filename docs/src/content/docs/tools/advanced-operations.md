@@ -3,8 +3,6 @@ title: Advanced Operations
 description: Complex video composition, effects, and advanced production tools
 ---
 
-# Advanced Operations
-
 The advanced operations category provides sophisticated video production tools for complex composition, effects, and professional video creation workflows. These tools enable you to create professional-quality content with multiple video sources, advanced effects, and automated processing.
 
 ## 🎬 Available Tools

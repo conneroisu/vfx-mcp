@@ -22,11 +22,9 @@ class TestVideoEffectsE2E:
     """End-to-end tests for video effects and filters."""
 
     @pytest.mark.integration
-    async def test_complete_effects_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_complete_effects_workflow(self, sample_video, temp_dir, mcp_server):
         """Test applying multiple effects in sequence.
-        
+
         This test applies multiple video effects in sequence to simulate
         a realistic video editing workflow with various effects.
         """
@@ -43,7 +41,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert bright_path.exists()
-            
+
             # Step 2: Apply contrast to the brightened video
             contrast_path = temp_dir / "bright_contrast.mp4"
             contrast_result = await client.call_tool(
@@ -56,7 +54,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert contrast_path.exists()
-            
+
             # Step 3: Apply saturation boost
             saturated_path = temp_dir / "final_effects.mp4"
             saturation_result = await client.call_tool(
@@ -69,7 +67,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert saturated_path.exists()
-            
+
             # Step 4: Generate thumbnail from final result
             thumb_path = temp_dir / "effects_thumb.jpg"
             thumb_result = await client.call_tool(
@@ -83,22 +81,19 @@ class TestVideoEffectsE2E:
                 },
             )
             assert thumb_path.exists()
-            
+
             # Verify thumbnail properties
             thumb_probe = ffmpeg.probe(str(thumb_path))
             thumb_stream = next(
-                s for s in thumb_probe["streams"]
-                if s["codec_type"] == "video"
+                s for s in thumb_probe["streams"] if s["codec_type"] == "video"
             )
             assert thumb_stream["width"] == 480
             assert thumb_stream["height"] == 270
 
     @pytest.mark.integration
-    async def test_speed_change_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_speed_change_workflow(self, sample_video, temp_dir, mcp_server):
         """Test speed change operations and validation.
-        
+
         This test changes video speed and verifies the duration
         changes correctly, then applies additional processing.
         """
@@ -114,17 +109,17 @@ class TestVideoEffectsE2E:
                 },
             )
             assert fast_path.exists()
-            
+
             # Verify duration is halved
             original_probe = ffmpeg.probe(str(sample_video))
             fast_probe = ffmpeg.probe(str(fast_path))
-            
+
             original_duration = float(original_probe["format"]["duration"])
             fast_duration = float(fast_probe["format"]["duration"])
-            
+
             expected_duration = original_duration / 2.0
             assert abs(fast_duration - expected_duration) < 0.5
-            
+
             # Step 2: Slow down original video by 0.5x
             slow_path = temp_dir / "slow.mp4"
             slow_result = await client.call_tool(
@@ -136,14 +131,14 @@ class TestVideoEffectsE2E:
                 },
             )
             assert slow_path.exists()
-            
+
             # Verify duration is doubled
             slow_probe = ffmpeg.probe(str(slow_path))
             slow_duration = float(slow_probe["format"]["duration"])
-            
+
             expected_slow_duration = original_duration * 2.0
             assert abs(slow_duration - expected_slow_duration) < 0.5
-            
+
             # Step 3: Generate thumbnails from both speed variants
             for name, video_path in [("fast", fast_path), ("slow", slow_path)]:
                 thumb_path = temp_dir / f"{name}_thumb.png"
@@ -162,7 +157,7 @@ class TestVideoEffectsE2E:
         self, sample_video, temp_dir, mcp_server
     ):
         """Test combining different filters for creative effects.
-        
+
         This test applies various filter combinations to create
         different artistic effects and validates the results.
         """
@@ -173,11 +168,11 @@ class TestVideoEffectsE2E:
             ("blur", 1.5, "blurred.mp4"),
             ("sharpen", 1.3, "sharp.mp4"),
         ]
-        
+
         async with Client(mcp_server) as client:
             for filter_name, strength, output_name in filters_to_test:
                 output_path = temp_dir / output_name
-                
+
                 filter_result = await client.call_tool(
                     "apply_filter",
                     {
@@ -188,12 +183,11 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify video properties are maintained
                 probe = ffmpeg.probe(str(output_path))
                 video_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in probe["streams"] if s["codec_type"] == "video"
                 )
                 assert video_stream["width"] == 1280
                 assert video_stream["height"] == 720
@@ -203,7 +197,7 @@ class TestVideoEffectsE2E:
         self, sample_video, temp_dir, mcp_server
     ):
         """Test thumbnail generation with different parameters.
-        
+
         This test generates thumbnails with various settings to verify
         all thumbnail generation options work correctly.
         """
@@ -215,11 +209,11 @@ class TestVideoEffectsE2E:
             (0.5, 160, 120, "thumb_tiny.png"),
             (3.5, 800, 450, "thumb_custom.jpg"),
         ]
-        
+
         async with Client(mcp_server) as client:
             for timestamp, width, height, filename in thumbnail_tests:
                 output_path = temp_dir / filename
-                
+
                 thumb_result = await client.call_tool(
                     "generate_thumbnail",
                     {
@@ -231,22 +225,19 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify thumbnail dimensions
                 probe = ffmpeg.probe(str(output_path))
                 video_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in probe["streams"] if s["codec_type"] == "video"
                 )
                 assert video_stream["width"] == width
                 assert video_stream["height"] == height
 
     @pytest.mark.integration
-    async def test_advanced_filter_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_advanced_filter_workflow(self, sample_video, temp_dir, mcp_server):
         """Test advanced filter operations and parameter handling.
-        
+
         This test applies filters with specific parameters and verifies
         advanced filter functionality works correctly.
         """
@@ -263,16 +254,15 @@ class TestVideoEffectsE2E:
                 },
             )
             assert scale_path.exists()
-            
+
             # Verify scaling worked
             probe = ffmpeg.probe(str(scale_path))
             video_stream = next(
-                s for s in probe["streams"]
-                if s["codec_type"] == "video"
+                s for s in probe["streams"] if s["codec_type"] == "video"
             )
             assert video_stream["width"] == 960
             assert video_stream["height"] == 540
-            
+
             # Test strength variations for blur filter
             strength_tests = [
                 (0.5, "blur_light.mp4"),
@@ -280,10 +270,10 @@ class TestVideoEffectsE2E:
                 (2.0, "blur_heavy.mp4"),
                 (3.0, "blur_extreme.mp4"),
             ]
-            
+
             for strength, filename in strength_tests:
                 output_path = temp_dir / filename
-                
+
                 blur_result = await client.call_tool(
                     "apply_filter",
                     {
@@ -294,12 +284,11 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify video properties maintained
                 probe = ffmpeg.probe(str(output_path))
                 video_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in probe["streams"] if s["codec_type"] == "video"
                 )
                 assert video_stream["width"] == 1280
                 assert video_stream["height"] == 720
@@ -309,7 +298,7 @@ class TestVideoEffectsE2E:
         self, sample_video, temp_dir, mcp_server
     ):
         """Test effects combined with other video operations.
-        
+
         This test combines effects with trimming, resizing, and other
         operations to verify the complete pipeline works correctly.
         """
@@ -326,7 +315,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert trimmed_path.exists()
-            
+
             # Step 2: Apply effect to trimmed video
             effect_path = temp_dir / "trimmed_with_effect.mp4"
             effect_result = await client.call_tool(
@@ -339,7 +328,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert effect_path.exists()
-            
+
             # Step 3: Resize the video with effects
             resized_path = temp_dir / "resized_with_effects.mp4"
             resize_result = await client.call_tool(
@@ -351,7 +340,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert resized_path.exists()
-            
+
             # Step 4: Change speed of the processed video
             speed_path = temp_dir / "final_processed.mp4"
             speed_result = await client.call_tool(
@@ -363,7 +352,7 @@ class TestVideoEffectsE2E:
                 },
             )
             assert speed_path.exists()
-            
+
             # Step 5: Generate final thumbnail
             final_thumb = temp_dir / "final_thumb.jpg"
             thumb_result = await client.call_tool(
@@ -377,29 +366,26 @@ class TestVideoEffectsE2E:
                 },
             )
             assert final_thumb.exists()
-            
+
             # Verify final video properties
             probe = ffmpeg.probe(str(speed_path))
             video_stream = next(
-                s for s in probe["streams"]
-                if s["codec_type"] == "video"
+                s for s in probe["streams"] if s["codec_type"] == "video"
             )
-            
+
             # Check dimensions (75% of original)
             assert video_stream["width"] == 960  # 1280 * 0.75
             assert video_stream["height"] == 540  # 720 * 0.75
-            
+
             # Check duration (3s trimmed, then 1.5x speed = ~2s)
             duration = float(probe["format"]["duration"])
             expected_duration = 3.0 / 1.5  # 3 seconds / 1.5x speed
             assert abs(duration - expected_duration) < 0.5
 
     @pytest.mark.integration
-    async def test_speed_change_edge_cases(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_speed_change_edge_cases(self, sample_video, temp_dir, mcp_server):
         """Test speed change with edge case values.
-        
+
         This test verifies that speed changes work correctly at the
         boundaries of acceptable values.
         """
@@ -411,11 +397,11 @@ class TestVideoEffectsE2E:
             (3.0, "triple_speed.mp4"),
             (4.0, "very_fast.mp4"),  # Maximum speed
         ]
-        
+
         async with Client(mcp_server) as client:
             for speed, filename in speed_tests:
                 output_path = temp_dir / filename
-                
+
                 speed_result = await client.call_tool(
                     "change_speed",
                     {
@@ -425,31 +411,28 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify duration change
                 original_probe = ffmpeg.probe(str(sample_video))
                 new_probe = ffmpeg.probe(str(output_path))
-                
+
                 original_duration = float(original_probe["format"]["duration"])
                 new_duration = float(new_probe["format"]["duration"])
-                
+
                 expected_duration = original_duration / speed
                 assert abs(new_duration - expected_duration) < 0.5
-                
+
                 # Verify video properties maintained
                 video_stream = next(
-                    s for s in new_probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in new_probe["streams"] if s["codec_type"] == "video"
                 )
                 assert video_stream["width"] == 1280
                 assert video_stream["height"] == 720
 
     @pytest.mark.integration
-    async def test_color_correction_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_color_correction_workflow(self, sample_video, temp_dir, mcp_server):
         """Test color correction and grading workflow.
-        
+
         This test applies various color correction filters to simulate
         a professional color grading workflow.
         """
@@ -461,11 +444,11 @@ class TestVideoEffectsE2E:
             ("contrast", 0.7, "low_contrast.mp4"),
             ("saturation", 0.5, "desaturated.mp4"),
         ]
-        
+
         async with Client(mcp_server) as client:
             for filter_name, strength, filename in color_tests:
                 output_path = temp_dir / filename
-                
+
                 color_result = await client.call_tool(
                     "apply_filter",
                     {
@@ -476,16 +459,15 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify properties maintained
                 probe = ffmpeg.probe(str(output_path))
                 video_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in probe["streams"] if s["codec_type"] == "video"
                 )
                 assert video_stream["width"] == 1280
                 assert video_stream["height"] == 720
-                
+
                 # Generate thumbnail to visually verify effect
                 thumb_path = temp_dir / f"{filename.replace('.mp4', '_thumb.jpg')}"
                 thumb_result = await client.call_tool(
@@ -501,11 +483,9 @@ class TestVideoEffectsE2E:
                 assert thumb_path.exists()
 
     @pytest.mark.integration
-    async def test_artistic_effects_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_artistic_effects_workflow(self, sample_video, temp_dir, mcp_server):
         """Test artistic effects and stylization.
-        
+
         This test applies artistic effects to create stylized versions
         of the video for creative purposes.
         """
@@ -514,11 +494,11 @@ class TestVideoEffectsE2E:
             ("grayscale", 1.0, "black_white.mp4"),
             ("vintage", 0.8, "retro_look.mp4"),
         ]
-        
+
         async with Client(mcp_server) as client:
             for effect, strength, filename in artistic_effects:
                 output_path = temp_dir / filename
-                
+
                 effect_result = await client.call_tool(
                     "apply_filter",
                     {
@@ -529,7 +509,7 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Create thumbnail for each artistic effect
                 thumb_path = temp_dir / f"{effect}_thumb.jpg"
                 thumb_result = await client.call_tool(
@@ -543,22 +523,19 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert thumb_path.exists()
-                
+
                 # Verify thumbnail dimensions
                 thumb_probe = ffmpeg.probe(str(thumb_path))
                 thumb_stream = next(
-                    s for s in thumb_probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in thumb_probe["streams"] if s["codec_type"] == "video"
                 )
                 assert thumb_stream["width"] == 480
                 assert thumb_stream["height"] == 270
 
     @pytest.mark.integration
-    async def test_effects_error_handling(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_effects_error_handling(self, sample_video, temp_dir, mcp_server):
         """Test error handling in video effects operations.
-        
+
         This test verifies that video effects tools handle errors
         correctly and provide meaningful error messages.
         """
@@ -574,9 +551,9 @@ class TestVideoEffectsE2E:
                         "strength": 1.0,
                     },
                 )
-            
+
             # Test invalid speed value (too low)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "change_speed",
                     {
@@ -585,9 +562,9 @@ class TestVideoEffectsE2E:
                         "speed": 0.1,  # Too low
                     },
                 )
-            
+
             # Test invalid speed value (too high)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "change_speed",
                     {
@@ -596,9 +573,9 @@ class TestVideoEffectsE2E:
                         "speed": 10.0,  # Too high
                     },
                 )
-            
+
             # Test invalid speed value (zero)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "change_speed",
                     {
@@ -607,9 +584,9 @@ class TestVideoEffectsE2E:
                         "speed": 0.0,  # Invalid
                     },
                 )
-            
+
             # Test invalid filter strength (too low)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "apply_filter",
                     {
@@ -619,9 +596,9 @@ class TestVideoEffectsE2E:
                         "strength": 0.05,  # Too low
                     },
                 )
-            
+
             # Test invalid filter strength (too high)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "apply_filter",
                     {
@@ -631,9 +608,9 @@ class TestVideoEffectsE2E:
                         "strength": 5.0,  # Too high
                     },
                 )
-            
+
             # Test invalid thumbnail dimensions (too small)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "generate_thumbnail",
                     {
@@ -643,9 +620,9 @@ class TestVideoEffectsE2E:
                         "height": 10,
                     },
                 )
-            
+
             # Test invalid thumbnail dimensions (too large)
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "generate_thumbnail",
                     {
@@ -655,7 +632,7 @@ class TestVideoEffectsE2E:
                         "height": 3000,
                     },
                 )
-            
+
             # Test thumbnail with invalid timestamp (negative)
             with pytest.raises(ToolError):
                 await client.call_tool(
@@ -666,7 +643,7 @@ class TestVideoEffectsE2E:
                         "timestamp": -1.0,  # Negative
                     },
                 )
-            
+
             # Test operations on non-existent file
             with pytest.raises(ToolError):
                 await client.call_tool(
@@ -684,14 +661,14 @@ class TestVideoEffectsE2E:
         self, sample_video, temp_dir, mcp_server
     ):
         """Test thumbnail generation with various timestamp values.
-        
+
         This test verifies that thumbnail generation handles different
         timestamp values correctly, including edge cases.
         """
         # Get video duration first
         probe = ffmpeg.probe(str(sample_video))
         duration = float(probe["format"]["duration"])
-        
+
         timestamp_tests = [
             (0.0, "thumb_start.jpg"),
             (duration / 2, "thumb_middle.jpg"),
@@ -699,11 +676,11 @@ class TestVideoEffectsE2E:
             (0.1, "thumb_very_start.jpg"),
             (duration - 0.1, "thumb_very_end.jpg"),
         ]
-        
+
         async with Client(mcp_server) as client:
             for timestamp, filename in timestamp_tests:
                 output_path = temp_dir / filename
-                
+
                 thumb_result = await client.call_tool(
                     "generate_thumbnail",
                     {
@@ -715,12 +692,11 @@ class TestVideoEffectsE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify thumbnail properties
                 thumb_probe = ffmpeg.probe(str(output_path))
                 thumb_stream = next(
-                    s for s in thumb_probe["streams"]
-                    if s["codec_type"] == "video"
+                    s for s in thumb_probe["streams"] if s["codec_type"] == "video"
                 )
                 assert thumb_stream["width"] == 320
                 assert thumb_stream["height"] == 240

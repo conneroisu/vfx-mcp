@@ -3,8 +3,6 @@ title: Quick Start
 description: Get started with the VFX MCP Server in minutes
 ---
 
-# Quick Start
-
 Get up and running with the VFX MCP Server and start editing videos with AI assistance in just a few minutes.
 
 ## 🎬 Your First Video Edit

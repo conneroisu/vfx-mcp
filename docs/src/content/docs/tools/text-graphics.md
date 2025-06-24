@@ -3,8 +3,6 @@ title: Text & Graphics Tools
 description: Video text overlay, graphics, and visual element manipulation tools
 ---
 
-# Text & Graphics Tools
-
 Video text overlay, graphics, and visual element manipulation tools for adding textual and graphic content.
 
 ## Available Tools

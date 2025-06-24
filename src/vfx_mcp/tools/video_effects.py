@@ -45,9 +45,7 @@ def register_video_effects_tools(
             RuntimeError: If ffmpeg encounters an error during processing.
         """
         validate_filter_name(filter)
-        validate_range(
-            strength, 0.1, 3.0, "Filter strength"
-        )
+        validate_range(strength, 0.1, 3.0, "Filter strength")
 
         await log_operation(
             ctx,
@@ -97,9 +95,7 @@ def register_video_effects_tools(
                     vintage=f"0.1*{strength}",
                 )
             elif filter == "sepia":
-                sepia_strength = min(
-                    strength, 1.0
-                )
+                sepia_strength = min(strength, 1.0)
                 stream = ffmpeg.filter(
                     stream,
                     "colorchannelmixer",
@@ -108,21 +104,13 @@ def register_video_effects_tools(
                     rb=0.189 * sepia_strength,
                 )
             elif filter == "grayscale":
-                stream = ffmpeg.filter(
-                    stream, "hue", s=1 - strength
-                )
+                stream = ffmpeg.filter(stream, "hue", s=1 - strength)
             elif filter == "hflip":
-                stream = ffmpeg.filter(
-                    stream, "hflip"
-                )
+                stream = ffmpeg.filter(stream, "hflip")
             elif filter.startswith("scale="):
                 # Handle scale filter with parameters like scale=640:360
-                scale_params = filter.split("=")[
-                    1
-                ]
-                width, height = (
-                    scale_params.split(":")
-                )
+                scale_params = filter.split("=")[1]
+                width, height = scale_params.split(":")
                 stream = ffmpeg.filter(
                     stream,
                     "scale",
@@ -130,12 +118,8 @@ def register_video_effects_tools(
                     int(height),
                 )
 
-            output = create_standard_output(
-                stream, output_path
-            )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            output = create_standard_output(stream, output_path)
+            ffmpeg.run(output, overwrite_output=True)
             return f"{filter.title()} filter applied and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
@@ -165,9 +149,7 @@ def register_video_effects_tools(
             ValueError: If speed factor is out of valid range.
             RuntimeError: If ffmpeg encounters an error during processing.
         """
-        validate_range(
-            speed, 0.25, 4.0, "Speed factor"
-        )
+        validate_range(speed, 0.25, 4.0, "Speed factor")
 
         await log_operation(
             ctx,
@@ -183,9 +165,7 @@ def register_video_effects_tools(
                 "setpts",
                 f"PTS/{speed}",
             )
-            audio_stream = ffmpeg.filter(
-                stream["a"], "atempo", speed
-            )
+            audio_stream = ffmpeg.filter(stream["a"], "atempo", speed)
 
             output = ffmpeg.output(
                 video_stream,
@@ -194,15 +174,9 @@ def register_video_effects_tools(
                 vcodec="libx264",
                 acodec="aac",
             )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            ffmpeg.run(output, overwrite_output=True)
 
-            speed_desc = (
-                "faster"
-                if speed > 1.0
-                else "slower"
-            )
+            speed_desc = "faster" if speed > 1.0 else "slower"
             return (
                 f"Video speed changed {speed_desc} ({speed}x) and saved to "
                 f"{output_path}"
@@ -248,18 +222,10 @@ def register_video_effects_tools(
         )
 
         try:
-            stream = ffmpeg.input(
-                input_path, ss=timestamp
-            )
-            stream = ffmpeg.filter(
-                stream, "scale", width, height
-            )
-            output = ffmpeg.output(
-                stream, output_path, vframes=1
-            )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            stream = ffmpeg.input(input_path, ss=timestamp)
+            stream = ffmpeg.filter(stream, "scale", width, height)
+            output = ffmpeg.output(stream, output_path, vframes=1)
+            ffmpeg.run(output, overwrite_output=True)
             return f"Thumbnail generated and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)

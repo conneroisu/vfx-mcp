@@ -49,17 +49,11 @@ def register_basic_video_tools(
         await log_operation(
             ctx,
             f"Trimming video from {start_time}s"
-            + (
-                f" for {duration}s"
-                if duration
-                else " to end"
-            ),
+            + (f" for {duration}s" if duration else " to end"),
         )
 
         try:
-            stream = ffmpeg.input(
-                input_path, ss=start_time
-            )
+            stream = ffmpeg.input(input_path, ss=start_time)
             if duration:
                 stream = ffmpeg.output(
                     stream,
@@ -68,13 +62,9 @@ def register_basic_video_tools(
                     c="copy",
                 )
             else:
-                stream = ffmpeg.output(
-                    stream, output_path, c="copy"
-                )
+                stream = ffmpeg.output(stream, output_path, c="copy")
 
-            ffmpeg.run(
-                stream, overwrite_output=True
-            )
+            ffmpeg.run(stream, overwrite_output=True)
             return f"Video trimmed successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
@@ -131,14 +121,9 @@ def register_basic_video_tools(
             ValueError: If parameter constraints are not met.
             RuntimeError: If ffmpeg encounters an error during processing.
         """
-        param_count = sum(
-            x is not None
-            for x in [width, height, scale]
-        )
+        param_count = sum(x is not None for x in [width, height, scale])
         if param_count != 1:
-            raise ValueError(
-                "Provide exactly one: width, height, or scale"
-            )
+            raise ValueError("Provide exactly one: width, height, or scale")
 
         try:
             stream = ffmpeg.input(input_path)
@@ -161,28 +146,20 @@ def register_basic_video_tools(
                     f"Resizing video by {scale}x",
                 )
             elif width:
-                stream = ffmpeg.filter(
-                    stream, "scale", width, -1
-                )
+                stream = ffmpeg.filter(stream, "scale", width, -1)
                 await log_operation(
                     ctx,
                     f"Resizing video to width {width}px",
                 )
             else:  # height
-                stream = ffmpeg.filter(
-                    stream, "scale", -1, height
-                )
+                stream = ffmpeg.filter(stream, "scale", -1, height)
                 await log_operation(
                     ctx,
                     f"Resizing video to height {height}px",
                 )
 
-            output = create_standard_output(
-                stream, output_path
-            )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            output = create_standard_output(stream, output_path)
+            ffmpeg.run(output, overwrite_output=True)
             return f"Video resized and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
@@ -212,9 +189,7 @@ def register_basic_video_tools(
             RuntimeError: If ffmpeg encounters an error during processing.
         """
         if len(input_paths) < 2:
-            raise ValueError(
-                "At least 2 videos required for concatenation"
-            )
+            raise ValueError("At least 2 videos required for concatenation")
 
         await log_operation(
             ctx,
@@ -222,19 +197,11 @@ def register_basic_video_tools(
         )
 
         try:
-            inputs = [
-                ffmpeg.input(path)
-                for path in input_paths
-            ]
-            stream = ffmpeg.concat(
-                *inputs, v=1, a=1
-            )
-            output = create_standard_output(
-                stream, output_path
-            )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            inputs = [ffmpeg.input(path) for path in input_paths]
+            # Concatenate without specifying stream counts - let ffmpeg auto-detect
+            stream = ffmpeg.concat(*inputs)
+            output = create_standard_output(stream, output_path)
+            ffmpeg.run(output, overwrite_output=True)
             return f"Videos concatenated successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
@@ -269,7 +236,7 @@ def register_basic_video_tools(
         """
         if duration <= 0:
             raise ValueError("Duration must be positive")
-        
+
         if framerate <= 0 or framerate > 120:
             raise ValueError("Framerate must be between 1 and 120 fps")
 
@@ -285,12 +252,8 @@ def register_basic_video_tools(
                 t=duration,
                 framerate=framerate,
             )
-            output = create_standard_output(
-                stream, output_path
-            )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            output = create_standard_output(stream, output_path)
+            ffmpeg.run(output, overwrite_output=True)
             return f"Video created successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)

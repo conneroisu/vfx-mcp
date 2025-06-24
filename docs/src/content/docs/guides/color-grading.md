@@ -3,8 +3,6 @@ title: Color Grading Guide
 description: Professional color grading techniques and workflows for video enhancement
 ---
 
-# Color Grading Guide
-
 Master the art of professional color grading with the VFX MCP Server. This comprehensive guide covers everything from basic color correction to advanced creative grading techniques used in professional video production.
 
 ## 🎨 Introduction to Color Grading

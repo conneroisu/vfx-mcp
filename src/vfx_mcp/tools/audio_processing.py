@@ -48,9 +48,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
             "ogg",
         ]
         if format not in supported_formats:
-            raise ValueError(
-                f"Format must be one of: {', '.join(supported_formats)}"
-            )
+            raise ValueError(f"Format must be one of: {', '.join(supported_formats)}")
 
         await log_operation(
             ctx,
@@ -79,9 +77,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
                     audio_bitrate=bitrate,
                 )
 
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            ffmpeg.run(output, overwrite_output=True)
             return f"Audio extracted successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
@@ -115,9 +111,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
             ValueError: If parameters are out of valid ranges.
             RuntimeError: If ffmpeg encounters an error during processing.
         """
-        validate_range(
-            audio_volume, 0.0, 2.0, "Audio volume"
-        )
+        validate_range(audio_volume, 0.0, 2.0, "Audio volume")
 
         mode = "replace" if replace else "mix"
         await log_operation(
@@ -168,9 +162,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
                     acodec="aac",
                 )
 
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            ffmpeg.run(output, overwrite_output=True)
             return f"Audio {mode}d successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)

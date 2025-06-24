@@ -14,9 +14,7 @@ def register_resource_endpoints(
     """Register MCP resource endpoints with the server."""
 
     @mcp.resource("file://videos/list/{format}")
-    async def list_videos_resource(
-        uri: str, format: str = "json"
-    ) -> str:
+    async def list_videos_resource(uri: str, format: str = "json") -> str:
         """List available video files in common directories."""
         video_extensions = {
             ".mp4",
@@ -39,53 +37,38 @@ def register_resource_endpoints(
 
         for search_path in search_paths:
             if search_path.exists():
-                for (
-                    file_path
-                ) in search_path.rglob("*"):
+                for file_path in search_path.rglob("*"):
                     if (
                         file_path.is_file()
-                        and file_path.suffix.lower()
-                        in video_extensions
+                        and file_path.suffix.lower() in video_extensions
                     ):
                         video_files.append(
                             {
                                 "name": file_path.name,
-                                "path": str(
-                                    file_path
-                                ),
+                                "path": str(file_path),
                                 "size": file_path.stat().st_size,
                             }
                         )
 
         return json.dumps(
             {
-                "videos": video_files[
-                    :100
-                ],  # Limit to first 100 files
+                "videos": video_files[:100],  # Limit to first 100 files
                 "total_found": len(video_files),
             },
             indent=2,
         )
 
     @mcp.resource("file://video/metadata/{path}")
-    async def video_metadata_resource(
-        uri: str, path: str
-    ) -> str:
+    async def video_metadata_resource(uri: str, path: str) -> str:
         """Get detailed metadata for a specific video file."""
         # Extract file path from URI
         if "path=" in uri:
             file_path = uri.split("path=")[1]
             try:
-                metadata = get_video_metadata(
-                    file_path
-                )
-                return json.dumps(
-                    metadata, indent=2
-                )
+                metadata = get_video_metadata(file_path)
+                return json.dumps(metadata, indent=2)
             except Exception as e:
-                return json.dumps(
-                    {"error": str(e)}, indent=2
-                )
+                return json.dumps({"error": str(e)}, indent=2)
         else:
             return json.dumps(
                 {
@@ -94,12 +77,8 @@ def register_resource_endpoints(
                 indent=2,
             )
 
-    @mcp.resource(
-        "file://tools/advanced/{category}"
-    )
-    async def advanced_tools_resource(
-        uri: str, category: str = "all"
-    ) -> str:
+    @mcp.resource("file://tools/advanced/{category}")
+    async def advanced_tools_resource(uri: str, category: str = "all") -> str:
         """List advanced VFX tools with descriptions and capabilities."""
         advanced_tools = [
             {
@@ -133,9 +112,7 @@ def register_resource_endpoints(
         return json.dumps(
             {
                 "advanced_tools": advanced_tools,
-                "total_tools": len(
-                    advanced_tools
-                ),
+                "total_tools": len(advanced_tools),
                 "categories": [
                     "compositing",
                     "effects",

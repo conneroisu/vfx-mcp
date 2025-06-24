@@ -3,8 +3,6 @@ title: Installation
 description: How to install and set up the VFX MCP Server
 ---
 
-# Installation
-
 Get the VFX MCP Server up and running in just a few steps. This guide covers multiple installation methods to suit your development environment.
 
 ## 🚀 Quick Start

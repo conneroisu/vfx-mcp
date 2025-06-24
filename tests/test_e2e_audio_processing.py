@@ -26,7 +26,7 @@ class TestAudioProcessingE2E:
         self, sample_video, sample_audio, temp_dir, mcp_server
     ):
         """Test a complete audio processing workflow.
-        
+
         This test simulates a realistic audio workflow:
         1. Extract audio from a video
         2. Add new audio to the video (replace mode)
@@ -46,15 +46,14 @@ class TestAudioProcessingE2E:
                 },
             )
             assert extracted_audio_path.exists()
-            
+
             # Verify extracted audio properties
             audio_probe = ffmpeg.probe(str(extracted_audio_path))
             audio_stream = next(
-                s for s in audio_probe["streams"]
-                if s["codec_type"] == "audio"
+                s for s in audio_probe["streams"] if s["codec_type"] == "audio"
             )
             assert audio_stream["codec_name"] == "mp3"
-            
+
             # Step 2: Replace audio in video
             video_with_new_audio = temp_dir / "video_new_audio.mp4"
             replace_result = await client.call_tool(
@@ -68,7 +67,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert video_with_new_audio.exists()
-            
+
             # Step 3: Mix audio with existing
             video_mixed_audio = temp_dir / "video_mixed_audio.mp4"
             mix_result = await client.call_tool(
@@ -82,7 +81,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert video_mixed_audio.exists()
-            
+
             # Step 4: Verify both outputs have video and audio
             for video_path in [video_with_new_audio, video_mixed_audio]:
                 probe = ffmpeg.probe(str(video_path))
@@ -102,7 +101,7 @@ class TestAudioProcessingE2E:
         self, sample_video, temp_dir, mcp_server
     ):
         """Test extracting audio in different formats.
-        
+
         This test extracts audio from a video in multiple formats
         and verifies each format has correct properties.
         """
@@ -113,11 +112,11 @@ class TestAudioProcessingE2E:
             ("ogg", "256k"),
             ("flac", ""),  # FLAC is lossless, no bitrate
         ]
-        
+
         async with Client(mcp_server) as client:
             for format_name, bitrate in formats_to_test:
                 output_path = temp_dir / f"audio.{format_name}"
-                
+
                 extract_args = {
                     "input_path": str(sample_video),
                     "output_path": str(output_path),
@@ -125,20 +124,19 @@ class TestAudioProcessingE2E:
                 }
                 if bitrate:
                     extract_args["bitrate"] = bitrate
-                
+
                 extract_result = await client.call_tool(
                     "extract_audio",
                     extract_args,
                 )
                 assert output_path.exists()
-                
+
                 # Verify audio format
                 probe = ffmpeg.probe(str(output_path))
                 audio_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "audio"
+                    s for s in probe["streams"] if s["codec_type"] == "audio"
                 )
-                
+
                 # Check codec (some formats have different probe names)
                 if format_name == "mp3":
                     assert audio_stream["codec_name"] == "mp3"
@@ -156,7 +154,7 @@ class TestAudioProcessingE2E:
         self, sample_video, sample_audio, temp_dir, mcp_server
     ):
         """Test audio volume adjustments in various scenarios.
-        
+
         This test verifies that audio volume adjustments work correctly
         in both replace and mix modes with different volume levels.
         """
@@ -166,12 +164,12 @@ class TestAudioProcessingE2E:
             ("mix", 0.3, "quiet_mix.mp4"),
             ("mix", 0.8, "normal_mix.mp4"),
         ]
-        
+
         async with Client(mcp_server) as client:
             for mode, volume, output_name in volume_tests:
                 output_path = temp_dir / output_name
-                replace_mode = (mode == "replace")
-                
+                replace_mode = mode == "replace"
+
                 result = await client.call_tool(
                     "add_audio",
                     {
@@ -183,7 +181,7 @@ class TestAudioProcessingE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify video and audio streams exist
                 probe = ffmpeg.probe(str(output_path))
                 video_stream = next(
@@ -196,7 +194,7 @@ class TestAudioProcessingE2E:
                 )
                 assert video_stream is not None
                 assert audio_stream is not None
-                
+
                 # Verify video properties remain unchanged
                 assert video_stream["width"] == 1280
                 assert video_stream["height"] == 720
@@ -206,7 +204,7 @@ class TestAudioProcessingE2E:
         self, sample_video, sample_audio, temp_dir, mcp_server
     ):
         """Test audio synchronization and duration matching.
-        
+
         This test verifies that audio is properly synchronized with video
         and handles duration mismatches correctly.
         """
@@ -226,7 +224,7 @@ class TestAudioProcessingE2E:
                 .overwrite_output()
                 .run(quiet=True)
             )
-            
+
             # Test replacing audio with longer audio (should be truncated)
             replace_long_path = temp_dir / "replace_long_audio.mp4"
             replace_result = await client.call_tool(
@@ -240,12 +238,12 @@ class TestAudioProcessingE2E:
                 },
             )
             assert replace_long_path.exists()
-            
+
             # Verify the output duration matches the video duration
             probe = ffmpeg.probe(str(replace_long_path))
             duration = float(probe["format"]["duration"])
             assert 4.9 <= duration <= 5.1  # Should match original video duration
-            
+
             # Test mixing with longer audio
             mix_long_path = temp_dir / "mix_long_audio.mp4"
             mix_result = await client.call_tool(
@@ -259,7 +257,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert mix_long_path.exists()
-            
+
             # Verify the output duration matches the video duration
             probe = ffmpeg.probe(str(mix_long_path))
             duration = float(probe["format"]["duration"])
@@ -270,7 +268,7 @@ class TestAudioProcessingE2E:
         self, sample_video, temp_dir, mcp_server
     ):
         """Test audio quality preservation across operations.
-        
+
         This test verifies that audio quality is preserved when
         extracting and re-adding audio to videos.
         """
@@ -286,7 +284,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert hq_audio_path.exists()
-            
+
             # Step 2: Add the high-quality audio back to video
             hq_video_path = temp_dir / "hq_video.mp4"
             add_result = await client.call_tool(
@@ -300,7 +298,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert hq_video_path.exists()
-            
+
             # Step 3: Extract audio again to compare
             extracted_again_path = temp_dir / "extracted_again.wav"
             extract_again_result = await client.call_tool(
@@ -312,13 +310,12 @@ class TestAudioProcessingE2E:
                 },
             )
             assert extracted_again_path.exists()
-            
+
             # Verify audio properties are maintained
             for audio_path in [hq_audio_path, extracted_again_path]:
                 probe = ffmpeg.probe(str(audio_path))
                 audio_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "audio"
+                    s for s in probe["streams"] if s["codec_type"] == "audio"
                 )
                 # Duration should be approximately the same
                 duration = float(probe["format"]["duration"])
@@ -329,7 +326,7 @@ class TestAudioProcessingE2E:
         self, sample_video, sample_audio, temp_dir, mcp_server
     ):
         """Test audio processing combined with video operations.
-        
+
         This test verifies that audio processing works correctly
         when combined with other video editing operations.
         """
@@ -346,7 +343,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert trimmed_video_path.exists()
-            
+
             # Step 2: Extract audio from trimmed video
             trimmed_audio_path = temp_dir / "trimmed_audio.mp3"
             extract_result = await client.call_tool(
@@ -359,7 +356,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert trimmed_audio_path.exists()
-            
+
             # Step 3: Resize the trimmed video
             resized_video_path = temp_dir / "resized_for_audio.mp4"
             resize_result = await client.call_tool(
@@ -371,7 +368,7 @@ class TestAudioProcessingE2E:
                 },
             )
             assert resized_video_path.exists()
-            
+
             # Step 4: Add new audio to resized video
             final_video_path = temp_dir / "final_with_audio.mp4"
             add_audio_result = await client.call_tool(
@@ -385,36 +382,32 @@ class TestAudioProcessingE2E:
                 },
             )
             assert final_video_path.exists()
-            
+
             # Verify final video properties
             probe = ffmpeg.probe(str(final_video_path))
             video_stream = next(
-                s for s in probe["streams"]
-                if s["codec_type"] == "video"
+                s for s in probe["streams"] if s["codec_type"] == "video"
             )
             audio_stream = next(
-                s for s in probe["streams"]
-                if s["codec_type"] == "audio"
+                s for s in probe["streams"] if s["codec_type"] == "audio"
             )
-            
+
             # Check video dimensions (should be 75% of original)
             assert video_stream["width"] == 960  # 1280 * 0.75
             assert video_stream["height"] == 540  # 720 * 0.75
-            
+
             # Check duration (should be ~3 seconds from trim)
             duration = float(probe["format"]["duration"])
             assert 2.9 <= duration <= 3.1
-            
+
             # Check audio is present
             assert audio_stream is not None
             assert audio_stream["codec_name"] == "aac"
 
     @pytest.mark.integration
-    async def test_audio_error_handling(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_audio_error_handling(self, sample_video, temp_dir, mcp_server):
         """Test error handling in audio processing operations.
-        
+
         This test verifies that audio processing tools handle errors
         correctly and provide meaningful error messages.
         """
@@ -429,9 +422,9 @@ class TestAudioProcessingE2E:
                         "format": "mp3",
                     },
                 )
-            
+
             # Test invalid audio format
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "extract_audio",
                     {
@@ -440,9 +433,9 @@ class TestAudioProcessingE2E:
                         "format": "invalid_format",
                     },
                 )
-            
+
             # Test adding audio with invalid volume
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "add_audio",
                     {
@@ -452,9 +445,9 @@ class TestAudioProcessingE2E:
                         "audio_volume": 5.0,  # Too high
                     },
                 )
-            
+
             # Test adding audio with negative volume
-            with pytest.raises(Exception):
+            with pytest.raises((ValueError, RuntimeError)):
                 await client.call_tool(
                     "add_audio",
                     {
@@ -464,7 +457,7 @@ class TestAudioProcessingE2E:
                         "audio_volume": -0.5,  # Negative
                     },
                 )
-            
+
             # Test adding non-existent audio file
             with pytest.raises(ToolError):
                 await client.call_tool(
@@ -476,7 +469,7 @@ class TestAudioProcessingE2E:
                         "replace": True,
                     },
                 )
-            
+
             # Test adding audio to non-existent video
             with pytest.raises(ToolError):
                 await client.call_tool(
@@ -490,11 +483,9 @@ class TestAudioProcessingE2E:
                 )
 
     @pytest.mark.integration
-    async def test_audio_bitrate_variations(
-        self, sample_video, temp_dir, mcp_server
-    ):
+    async def test_audio_bitrate_variations(self, sample_video, temp_dir, mcp_server):
         """Test audio extraction with different bitrate settings.
-        
+
         This test verifies that different bitrate settings work correctly
         and produce files with expected properties.
         """
@@ -504,13 +495,13 @@ class TestAudioProcessingE2E:
             ("192k", "good_quality.mp3"),
             ("320k", "high_quality.mp3"),
         ]
-        
+
         async with Client(mcp_server) as client:
             file_sizes = []
-            
+
             for bitrate, filename in bitrate_tests:
                 output_path = temp_dir / filename
-                
+
                 extract_result = await client.call_tool(
                     "extract_audio",
                     {
@@ -521,22 +512,23 @@ class TestAudioProcessingE2E:
                     },
                 )
                 assert output_path.exists()
-                
+
                 # Verify file properties
                 probe = ffmpeg.probe(str(output_path))
                 audio_stream = next(
-                    s for s in probe["streams"]
-                    if s["codec_type"] == "audio"
+                    s for s in probe["streams"] if s["codec_type"] == "audio"
                 )
                 assert audio_stream["codec_name"] == "mp3"
-                
+
                 # Track file size for comparison
                 file_size = output_path.stat().st_size
                 file_sizes.append(file_size)
-            
+
             # Verify that higher bitrates generally produce larger files
             # (with some tolerance for encoding variations)
             for i in range(len(file_sizes) - 1):
                 # Each higher bitrate should generally be larger (with 20% tolerance)
                 size_ratio = file_sizes[i + 1] / file_sizes[i]
-                assert size_ratio > 0.8  # Allow for some compression efficiency variation
+                assert (
+                    size_ratio > 0.8
+                )  # Allow for some compression efficiency variation

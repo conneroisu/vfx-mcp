@@ -3,8 +3,6 @@ title: Specialized Effects Tools
 description: Advanced and specialized video effects for unique visual transformations
 ---
 
-# Specialized Effects Tools
-
 Advanced and specialized video effects for unique visual transformations and creative video processing.
 
 ## Available Tools

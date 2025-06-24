@@ -3,7 +3,6 @@ title: Visual Effects Examples
 description: Practical examples for visual effects and compositing workflows
 ---
 
-# Visual Effects Examples
 
 Practical examples for visual effects and compositing workflows using the VFX MCP Server.
 

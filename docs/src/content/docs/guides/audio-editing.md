@@ -3,8 +3,6 @@ title: Audio Editing Guide
 description: Comprehensive guide to audio processing and editing workflows
 ---
 
-# Audio Editing Guide
-
 Complete guide to audio processing, editing, and enhancement workflows using the VFX MCP Server.
 
 ## Audio Processing Workflow

@@ -3,8 +3,6 @@ title: Audio Processing
 description: Comprehensive audio manipulation and visualization tools
 ---
 
-# Audio Processing
-
 The audio processing tools provide comprehensive capabilities for extracting, manipulating, and visualizing audio content in videos. These tools handle everything from basic audio extraction to advanced multi-track mixing and audio spectrum visualization.
 
 ## 🎵 Available Tools

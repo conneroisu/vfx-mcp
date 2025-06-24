@@ -3,7 +3,6 @@ title: Basic Video Editing Examples
 description: Practical code examples for fundamental video editing operations
 ---
 
-# Basic Video Editing Examples
 
 This page provides practical, copy-paste examples for common basic video editing tasks. Each example includes setup, execution, and expected results.
 

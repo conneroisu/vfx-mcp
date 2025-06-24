@@ -52,9 +52,7 @@ def register_compositing_tools(
             ValueError: If parameter values are out of valid ranges.
             RuntimeError: If ffmpeg encounters an error during processing.
         """
-        validate_range(
-            similarity, 0.0, 1.0, "Similarity"
-        )
+        validate_range(similarity, 0.0, 1.0, "Similarity")
         validate_range(blend, 0.0, 1.0, "Blend")
         validate_range(
             spill_reduction,
@@ -73,9 +71,7 @@ def register_compositing_tools(
         )
 
         try:
-            input_stream = ffmpeg.input(
-                input_path
-            )
+            input_stream = ffmpeg.input(input_path)
 
             # Create chromakey filter
             keyed = ffmpeg.filter(
@@ -91,20 +87,13 @@ def register_compositing_tools(
                 keyed = ffmpeg.filter(
                     keyed,
                     "despill",
-                    type=(
-                        "green"
-                        if "green"
-                        in chroma_key_color.lower()
-                        else "blue"
-                    ),
+                    type=("green" if "green" in chroma_key_color.lower() else "blue"),
                     mix=spill_reduction,
                 )
 
             if background_path:
                 # Composite with background
-                background = ffmpeg.input(
-                    background_path
-                )
+                background = ffmpeg.input(background_path)
                 output_stream = ffmpeg.filter(
                     [background, keyed],
                     "overlay",
@@ -121,9 +110,7 @@ def register_compositing_tools(
                 vcodec="libx264",
                 pix_fmt="yuv420p",
             )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            ffmpeg.run(output, overwrite_output=True)
 
             bg_msg = (
                 " with custom background"
@@ -178,9 +165,7 @@ def register_compositing_tools(
             stream = ffmpeg.input(input_path)
 
             # Convert angle and strength to blur parameters
-            blur_amount = (
-                int(blur_strength * 3) * 2 + 1
-            )  # Odd number for kernel size
+            blur_amount = int(blur_strength * 3) * 2 + 1  # Odd number for kernel size
 
             # Create motion blur kernel based on angle
             # Note: Complex motion blur math would go here in a real implementation
@@ -215,12 +200,8 @@ def register_compositing_tools(
                     luma_radius=f"1:{blur_amount}",
                 )
 
-            output = create_standard_output(
-                stream, output_path
-            )
-            ffmpeg.run(
-                output, overwrite_output=True
-            )
+            output = create_standard_output(stream, output_path)
+            ffmpeg.run(output, overwrite_output=True)
 
             return (
                 f"Motion blur applied (strength: {blur_strength}, angle: {angle}°) "

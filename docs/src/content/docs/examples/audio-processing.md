@@ -3,7 +3,6 @@ title: Audio Processing Examples
 description: Practical examples for audio editing and processing workflows
 ---
 
-# Audio Processing Examples
 
 Practical examples for audio editing and processing workflows using the VFX MCP Server.
 

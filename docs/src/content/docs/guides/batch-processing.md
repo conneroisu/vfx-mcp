@@ -3,8 +3,6 @@ title: Batch Processing Guide
 description: Efficient batch video processing workflows and automation techniques
 ---
 
-# Batch Processing Guide
-
 Learn how to efficiently process multiple videos at once using the VFX MCP Server's batch processing capabilities. This guide covers everything from simple batch operations to complex automated workflows.
 
 ## 🚀 Introduction to Batch Processing

@@ -3,8 +3,6 @@ title: Tools Overview
 description: Complete overview of all 35+ video editing tools available in the VFX MCP Server
 ---
 
-# Tools Overview
-
 The VFX MCP Server provides **35+ professional video editing tools** organized into logical categories. Each tool is designed for specific video manipulation tasks and can be used individually or combined for complex workflows.
 
 ## 🎯 Tool Categories

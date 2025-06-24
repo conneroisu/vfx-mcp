@@ -3,8 +3,6 @@ title: Tool Signatures
 description: Complete API reference for all VFX MCP Server tools with function signatures and parameters
 ---
 
-# Tool Signatures
-
 This page provides the complete API reference for all 35+ tools available in the VFX MCP Server. Each tool signature includes parameters, types, default values, and return types.
 
 ## 🏷️ Type Definitions

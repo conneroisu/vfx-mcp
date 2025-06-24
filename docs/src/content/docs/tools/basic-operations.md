@@ -3,8 +3,6 @@ title: Basic Operations
 description: Essential video editing tools for fundamental operations
 ---
 
-# Basic Operations
-
 The basic operations provide the foundation for all video editing workflows. These four essential tools handle the most common video manipulation tasks with optimized performance and comprehensive error handling.
 
 ## 🎬 Available Tools

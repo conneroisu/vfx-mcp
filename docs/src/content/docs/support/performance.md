@@ -3,8 +3,6 @@ title: Performance Optimization
 description: Tips and techniques for optimizing video processing performance
 ---
 
-# Performance Optimization
-
 Maximize the speed and efficiency of your video processing workflows with the VFX MCP Server. This guide covers performance tuning, optimization strategies, and best practices for handling large-scale video processing tasks.
 
 ## 📊 Understanding Performance Factors

@@ -3,8 +3,6 @@ title: Error Handling
 description: Comprehensive error handling and debugging guide for the VFX MCP Server
 ---
 
-# Error Handling
-
 Comprehensive error handling and debugging guide for the VFX MCP Server.
 
 ## Error Types

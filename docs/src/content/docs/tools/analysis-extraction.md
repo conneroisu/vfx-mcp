@@ -3,8 +3,6 @@ title: Analysis & Extraction Tools
 description: Video analysis and content extraction tools for metadata, thumbnails, and information gathering
 ---
 
-# Analysis & Extraction Tools
-
 Video analysis and content extraction tools for metadata, thumbnails, and information gathering.
 
 ## Available Tools
