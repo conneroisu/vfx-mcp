@@ -1,0 +1,290 @@
+/* Custom styles for VFX MCP Documentation */
+
+:root {
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Tool category cards */
+.tool-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.75rem;
+  margin: 2.5rem 0;
+}
+
+.tool-category-card {
+  background: var(--sl-color-bg-nav);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 12px;
+  padding: 2rem;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--sl-color-accent);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+  border-radius: 4px 4px 0 0;
+}
+
+.tool-category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--sl-color-accent);
+}
+
+.tool-category-card:hover::before {
+  transform: scaleX(1);
+}
+
+.tool-category-card h3 {
+  color: var(--sl-color-white);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tool-category-card .tool-count {
+  background: var(--sl-color-accent);
+  color: var(--sl-color-black);
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tool-category-card p {
+  line-height: 1.6;
+  margin-bottom: 0;
+  color: var(--sl-color-gray-2);
+}
+
+/* Code block enhancements */
+pre {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Tool signature styling */
+.tool-signature {
+  background: var(--sl-color-bg-nav);
+  border-left: 4px solid var(--sl-color-accent);
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.tool-signature code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Parameter table styling */
+.params-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.params-table th,
+.params-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-gray-5);
+  text-align: left;
+}
+
+.params-table th {
+  background: var(--sl-color-bg-nav);
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+.params-table tr:nth-child(even) {
+  background: var(--sl-color-bg-sidebar);
+}
+
+/* Feature highlights */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.feature-item {
+  padding: 1.5rem;
+  background: var(--sl-color-bg-nav);
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-5);
+}
+
+.feature-item h4 {
+  color: var(--sl-color-white);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+/* Badge styling */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-new {
+  background: #10b981;
+  color: white;
+}
+
+.badge-beta {
+  background: #f59e0b;
+  color: white;
+}
+
+.badge-advanced {
+  background: #8b5cf6;
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tool-category-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero {
+    padding: 1.5rem;
+  }
+}
+
+/* Animation for code examples */
+.code-example {
+  position: relative;
+  border-radius: 8px;
+}
+
+/* Enhanced buttons and links - using Starlight's existing button styles */
+.hero .hero-actions a {
+  transition: all 0.3s ease;
+}
+
+.hero .hero-actions a:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Feature cards enhancement */
+.feature-item {
+  padding: 2rem;
+  background: var(--sl-color-bg-nav);
+  border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-5);
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--sl-color-accent);
+}
+
+/* Animated icons - simplified */
+.feature-item h4::before,
+.tool-category-card h3::before {
+  content: '⚡';
+  margin-right: 0.5rem;
+  display: inline-block;
+}
+
+/* Loading animation for code blocks - removed conflicting styles */
+
+/* Starlight navigation enhancements */
+.sidebar-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-accent) transparent;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--sl-color-accent) 0%, var(--sl-color-accent-high) 100%);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--sl-color-accent-high) 0%, var(--sl-color-accent) 100%);
+}
+
+/* Enhanced sidebar links */
+nav a {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+nav a:hover {
+  transform: translateX(2px);
+}
+
+/* Enhanced search */
+.search-dialog {
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+}
+
+/* Improved table styling */
+table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--sl-color-gray-5);
+}
+
+table th {
+  background: var(--sl-color-bg-nav);
+  color: var(--sl-color-white);
+  font-weight: 600;
+}
+
+table tr:hover {
+  background: var(--sl-color-bg-sidebar);
+  transition: all 0.3s ease;
+}
