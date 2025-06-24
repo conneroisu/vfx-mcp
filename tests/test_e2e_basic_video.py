@@ -363,7 +363,7 @@ class TestBasicVideoOperationsE2E:
                 )
 
             # Test invalid resize parameters (multiple parameters)
-            with pytest.raises((ValueError, RuntimeError)):
+            with pytest.raises(ToolError):
                 await client.call_tool(
                     "resize_video",
                     {
@@ -375,7 +375,7 @@ class TestBasicVideoOperationsE2E:
                 )
 
             # Test resize with invalid scale
-            with pytest.raises((ValueError, RuntimeError)):
+            with pytest.raises(ToolError):
                 await client.call_tool(
                     "resize_video",
                     {
@@ -386,7 +386,7 @@ class TestBasicVideoOperationsE2E:
                 )
 
             # Test concatenation with insufficient videos
-            with pytest.raises((ValueError, RuntimeError)):
+            with pytest.raises(ToolError):
                 await client.call_tool(
                     "concatenate_videos",
                     {
@@ -396,7 +396,7 @@ class TestBasicVideoOperationsE2E:
                 )
 
             # Test image_to_video with invalid parameters
-            with pytest.raises((ValueError, RuntimeError)):
+            with pytest.raises(ToolError):
                 await client.call_tool(
                     "image_to_video",
                     {
@@ -407,7 +407,7 @@ class TestBasicVideoOperationsE2E:
                 )
 
             # Test image_to_video with invalid framerate
-            with pytest.raises((ValueError, RuntimeError)):
+            with pytest.raises(ToolError):
                 await client.call_tool(
                     "image_to_video",
                     {

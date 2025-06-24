@@ -75,7 +75,7 @@ class TestAudioOperations:
             result = await client.call_tool(
                 "add_audio",
                 {
-                    "video_path": str(sample_video),
+                    "input_path": str(sample_video),
                     "audio_path": str(sample_audio),
                     "output_path": str(output_path),
                     "replace": True,
@@ -278,7 +278,7 @@ class TestThumbnailGeneration:
             result = await client.call_tool(
                 "generate_thumbnail",
                 {
-                    "video_path": str(sample_video),
+                    "input_path": str(sample_video),
                     "output_path": str(output_path),
                 },
             )
@@ -314,7 +314,7 @@ class TestThumbnailGeneration:
             result = await client.call_tool(
                 "generate_thumbnail",
                 {
-                    "video_path": str(sample_video),
+                    "input_path": str(sample_video),
                     "output_path": str(output_path),
                     "timestamp": 2.0,
                 },
@@ -345,7 +345,7 @@ class TestThumbnailGeneration:
             result = await client.call_tool(
                 "generate_thumbnail",
                 {
-                    "video_path": str(sample_video),
+                    "input_path": str(sample_video),
                     "output_path": str(output_path),
                     "width": 320,
                     "height": 180,

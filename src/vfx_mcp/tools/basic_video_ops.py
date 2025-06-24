@@ -1,4 +1,15 @@
-"""Basic video editing operations: trim, resize, concatenate, and info."""
+"""Basic video editing operations: trim, resize, concatenate, and info.
+
+This module provides fundamental video editing tools for trimming segments,
+resizing videos, concatenating multiple files, and retrieving video metadata.
+All operations use FFmpeg for processing and include comprehensive error handling.
+
+Example:
+    Register tools with MCP server:
+
+        mcp = FastMCP('video-editor')
+        register_basic_video_tools(mcp)
+"""
 
 from typing import Any
 
@@ -17,7 +28,18 @@ from ..core import (
 def register_basic_video_tools(
     mcp: FastMCP,
 ) -> None:
-    """Register basic video editing tools with the MCP server."""
+    """Register basic video editing tools with the MCP server.
+
+    Adds fundamental video editing operations including trim, resize,
+    concatenate, get_video_info, and image_to_video functions to the
+    provided FastMCP server instance.
+
+    Args:
+        mcp: The FastMCP server instance to register tools with.
+
+    Returns:
+        None
+    """
 
     @mcp.tool
     async def trim_video(
