@@ -138,35 +138,8 @@
         FFPROBE_PATH = "${pkgs.ffmpeg-full}/bin/ffprobe";
       };
 
-      # Script packages and main application
-      packages =
-        {
-          default = pkgs.python313Packages.buildPythonApplication {
-            pname = "vfx-mcp";
-            version = "0.1.0";
-
-            src = ./.;
-
-            propagatedBuildInputs = with pkgs.python313Packages; [
-              # Dependencies will be managed by uv/pyproject.toml
-            ];
-
-            # Use uv for dependency management
-            format = "pyproject";
-
-            nativeBuildInputs = with pkgs.python313Packages; [
-              setuptools
-              wheel
-            ];
-          };
-        }
-        // scriptPackages;
-
-      # App to run the server directly
-      apps.default = flake-utils.lib.mkApp {
-        drv = self.packages.${system}.default;
-        exePath = "/bin/vfx-mcp";
-      };
+      # Script packages only (no main application packages due to fastmcp dependency issues)
+      packages = scriptPackages;
 
       # Formatter output
       formatter = treefmtEval.config.build.wrapper;
