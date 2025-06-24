@@ -116,19 +116,9 @@ def register_video_effects_tools(
 
             # Apply different filters based on name
             if filter == "blur":
-                stream = ffmpeg.filter(
-                    stream,
-                    "boxblur",
-                    luma_radius=strength,
-                )
-            elif filter == "sharpen":
-                stream = ffmpeg.filter(
-                    stream,
-                    "unsharp",
-                    luma_matrix_h_size=5,
-                    luma_matrix_v_size=5,
-                    luma_amount=strength,
-                )
+                # Apply gaussian blur with strength controlling the blur radius
+                blur_radius = max(0.5, min(strength * 5, 10))  # Scale strength
+                stream = ffmpeg.filter(stream, "gblur", sigma=blur_radius)
             elif filter == "brightness":
                 stream = ffmpeg.filter(
                     stream,
@@ -148,10 +138,13 @@ def register_video_effects_tools(
                     saturation=strength,
                 )
             elif filter == "vintage":
+                # Apply vintage effect using color correction
                 stream = ffmpeg.filter(
                     stream,
-                    "curves",
-                    vintage=f"0.1*{strength}",
+                    "eq",
+                    brightness=0.1 * strength,
+                    contrast=1.2 * strength,
+                    saturation=0.7 * strength,
                 )
             elif filter == "sepia":
                 sepia_strength = min(strength, 1.0)
@@ -166,10 +159,6 @@ def register_video_effects_tools(
                 stream = ffmpeg.filter(stream, "hue", s=1 - strength)
             elif filter == "hflip":
                 stream = ffmpeg.filter(stream, "hflip")
-            elif filter == "blur":
-                # Apply gaussian blur with strength controlling the blur radius
-                blur_radius = max(0.5, min(strength * 5, 10))  # Scale strength
-                stream = ffmpeg.filter(stream, "gblur", sigma=blur_radius)
             elif filter == "sharpen":
                 # Apply unsharp mask for sharpening with strength controlling amount
                 sharpen_amount = max(0.1, min(strength, 3.0))  # Scale strength

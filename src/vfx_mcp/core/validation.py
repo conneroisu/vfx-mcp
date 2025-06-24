@@ -77,17 +77,9 @@ def validate_filter_name(filter_name: str) -> str:
         "brightness",
         "contrast",
         "saturation",
-        "hue",
-        "gamma",
         "vintage",
         "sepia",
         "grayscale",
-        "invert",
-        "noise",
-        "vignette",
-        "emboss",
-        "edge",
-        "cartoon",
         "hflip",
     ]
     # Allow scale filters with parameters
