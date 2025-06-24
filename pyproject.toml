@@ -113,6 +113,7 @@ exclude_lines = [
 
 [dependency-groups]
 dev = [
+    "build>=1.2.2.post1",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.2.1",
