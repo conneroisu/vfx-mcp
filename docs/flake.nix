@@ -43,13 +43,11 @@
       };
     });
 
-    packages = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-    in rec {
+    packages = forAllSystems (system: rec {
       vfx-mcp-docs = bun2nix.lib.${system}.mkBunDerivation {
         pname = "vfx-mcp-docs";
         version = "0.0.1";
-        src = ./.;
+        src = self;
         bunNix = ./bun.nix;
 
         buildPhase = ''
