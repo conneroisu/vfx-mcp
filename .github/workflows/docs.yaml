@@ -22,7 +22,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run build
-        run: cd docs/ && nix build -L --accept-flake-config '.#'
+        run: cd docs/ && nix build --debug -L --accept-flake-config '.#'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
