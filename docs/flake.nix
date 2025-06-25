@@ -4,16 +4,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    bun2nix = {
-      url = "github:baileyluTCD/bun2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = {
     self,
     nixpkgs,
-    bun2nix,
     ...
   }: let
     systems = [
@@ -30,9 +25,9 @@
     in {
       default = pkgs.mkShell {
         packages = with pkgs; [
-          bun
+          nodejs_20
+          nodePackages.npm
           nodePackages.typescript
-          bun2nix.packages.${system}.default
           typescript-language-server
           astro-language-server
         ];
@@ -43,21 +38,36 @@
       };
     });
 
-    packages = forAllSystems (system: rec {
-      vfx-mcp-docs = bun2nix.lib.${system}.mkBunDerivation {
+    packages = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in rec {
+      vfx-mcp-docs = pkgs.buildNpmPackage {
         pname = "vfx-mcp-docs";
         version = "0.0.1";
-        src = self;
-        bunNix = ./bun.nix;
+        src = ./.;
+
+        npmDepsHash = "sha256-YwKKA9gCF/Z/y2bXFlD6guExjf2GQj+hE0LawhWz9Ow=";
+        
+        makeCacheWritable = true;
 
         buildPhase = ''
+          runHook preBuild
+          
+          # Copy examples
           cp -r ${./../examples} ./.
+          
           # Build the Astro site
-          bun run build
+          npm run build
+          
+          runHook postBuild
         '';
 
         installPhase = ''
+          runHook preInstall
+          
           cp -r dist $out
+          
+          runHook postInstall
         '';
       };
       default = vfx-mcp-docs;
