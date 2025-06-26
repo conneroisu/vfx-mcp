@@ -7,11 +7,12 @@ Tests cover realistic workflows and complete operations from input to output val
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import ffmpeg
 import pytest
-from fastmcp import Client
+from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ class TestFormatConversionE2E:
     """End-to-end tests for format conversion operations."""
 
     @pytest.mark.integration
-    async def test_format_conversion_workflow(self, sample_video, temp_dir, mcp_server):
+    async def test_format_conversion_workflow(self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test converting between different video formats and codecs.
 
         This test converts a video to different formats and verifies
@@ -98,8 +99,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_format_conversion_with_effects_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test format conversion combined with effects.
 
         This test applies effects and then converts the format to verify
@@ -162,8 +163,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_bitrate_variations_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test format conversion with different bitrate settings.
 
         This test converts videos with various bitrate settings to verify
@@ -218,8 +219,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_codec_compatibility_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test conversion with different codec combinations.
 
         This test verifies that various codec combinations work correctly
@@ -271,8 +272,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_conversion_with_video_operations_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test format conversion combined with video operations.
 
         This test combines format conversion with trimming, resizing,
@@ -355,8 +356,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_audio_only_conversion_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test audio format conversion workflow.
 
         This test extracts audio, then uses format conversion to change
@@ -427,8 +428,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_lossless_conversion_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test lossless and high-quality conversion workflow.
 
         This test performs conversions focused on maintaining the highest
@@ -482,7 +483,7 @@ class TestFormatConversionE2E:
                 assert video_stream["height"] == 720
 
     @pytest.mark.integration
-    async def test_conversion_error_handling(self, sample_video, temp_dir, mcp_server):
+    async def test_conversion_error_handling(self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test error handling in format conversion operations.
 
         This test verifies that format conversion tools handle errors
@@ -541,8 +542,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_format_preservation_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test format conversion while preserving specific characteristics.
 
         This test verifies that certain video characteristics are preserved
@@ -587,8 +588,8 @@ class TestFormatConversionE2E:
 
     @pytest.mark.integration
     async def test_multiple_conversion_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test multiple conversions in sequence.
 
         This test performs multiple format conversions to verify that

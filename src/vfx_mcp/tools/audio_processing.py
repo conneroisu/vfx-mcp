@@ -21,6 +21,8 @@ Example:
         )
 """
 
+from typing import Any
+
 import ffmpeg
 from fastmcp import Context, FastMCP
 
@@ -31,7 +33,7 @@ from ..core import (
 )
 
 
-def register_audio_tools(mcp: FastMCP) -> None:
+def register_audio_tools(mcp: FastMCP[Any]) -> None:
     """Register audio processing tools with the MCP server.
 
     Adds comprehensive audio manipulation capabilities including extraction,
@@ -106,13 +108,13 @@ def register_audio_tools(mcp: FastMCP) -> None:
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: Any = ffmpeg.input(input_path)
 
             # Extract only the audio stream
-            audio_stream = stream['a']
+            audio_stream: Any = stream["a"]
 
             if format == "wav":
-                output = ffmpeg.output(
+                output: Any = ffmpeg.output(
                     audio_stream,
                     output_path,
                     acodec="pcm_s16le",
@@ -125,7 +127,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
                     "ogg": "libvorbis",
                 }
 
-                output_kwargs = {
+                output_kwargs: dict[str, Any] = {
                     "acodec": codec_map[format],
                 }
 
@@ -135,17 +137,17 @@ def register_audio_tools(mcp: FastMCP) -> None:
                     # Use -q:a instead of bitrate for better compatibility
                     if bitrate:
                         # Convert bitrate to approximate quality level
-                        bitrate_num = int(bitrate.rstrip('k'))
+                        bitrate_num = int(bitrate.rstrip("k"))
                         if bitrate_num <= 96:
-                            output_kwargs["qscale:a"] = 0  # ~64kbps
+                            output_kwargs["qscale:a"] = "0"  # ~64kbps
                         elif bitrate_num <= 128:
-                            output_kwargs["qscale:a"] = 2  # ~96kbps
+                            output_kwargs["qscale:a"] = "2"  # ~96kbps
                         elif bitrate_num <= 192:
-                            output_kwargs["qscale:a"] = 4  # ~128kbps
+                            output_kwargs["qscale:a"] = "4"  # ~128kbps
                         elif bitrate_num <= 256:
-                            output_kwargs["qscale:a"] = 6  # ~192kbps
+                            output_kwargs["qscale:a"] = "6"  # ~192kbps
                         else:
-                            output_kwargs["qscale:a"] = 8  # ~256kbps+
+                            output_kwargs["qscale:a"] = "8"  # ~256kbps+
                 elif format not in ["flac"] and bitrate:
                     output_kwargs["audio_bitrate"] = bitrate
 
@@ -159,6 +161,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
             return f"Audio extracted successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # Re-raise to ensure function returns on all paths
 
     @mcp.tool
     async def add_audio(
@@ -198,8 +201,8 @@ def register_audio_tools(mcp: FastMCP) -> None:
         )
 
         try:
-            video_input = ffmpeg.input(input_path)
-            audio_input = ffmpeg.input(audio_path)
+            video_input: Any = ffmpeg.input(input_path)
+            audio_input: Any = ffmpeg.input(audio_path)
 
             if replace:
                 # Replace existing audio
@@ -209,7 +212,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
                         "volume",
                         audio_volume,
                     )
-                output = ffmpeg.output(
+                output: Any = ffmpeg.output(
                     video_input,
                     audio_input,
                     output_path,
@@ -226,7 +229,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
                         audio_volume,
                     )
 
-                mixed_audio = ffmpeg.filter(
+                mixed_audio: Any = ffmpeg.filter(
                     [video_input, audio_input],
                     "amix",
                     inputs=2,
@@ -244,6 +247,7 @@ def register_audio_tools(mcp: FastMCP) -> None:
             return f"Audio {mode}d successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # Re-raise to ensure function returns on all paths
 
     @mcp.tool
     async def adjust_audio_volume(
@@ -278,13 +282,14 @@ def register_audio_tools(mcp: FastMCP) -> None:
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: Any = ffmpeg.input(input_path)
             stream = ffmpeg.filter(stream, "volume", volume)
-            output = ffmpeg.output(stream, output_path)
+            output: Any = ffmpeg.output(stream, output_path)
             ffmpeg.run(output, overwrite_output=True)
             return f"Audio volume adjusted to {volume}x and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # Re-raise to ensure function returns on all paths
 
     @mcp.tool
     async def mix_audio(
@@ -324,8 +329,8 @@ def register_audio_tools(mcp: FastMCP) -> None:
         )
 
         try:
-            audio1 = ffmpeg.input(audio1_path)
-            audio2 = ffmpeg.input(audio2_path)
+            audio1: Any = ffmpeg.input(audio1_path)
+            audio2: Any = ffmpeg.input(audio2_path)
 
             # Apply volume adjustments if needed
             if audio1_volume != 1.0:
@@ -334,17 +339,18 @@ def register_audio_tools(mcp: FastMCP) -> None:
                 audio2 = ffmpeg.filter(audio2, "volume", audio2_volume)
 
             # Mix the audio tracks
-            mixed_audio = ffmpeg.filter(
+            mixed_audio: Any = ffmpeg.filter(
                 [audio1, audio2],
                 "amix",
                 inputs=2,
                 duration="longest",
             )
-            output = ffmpeg.output(mixed_audio, output_path)
+            output: Any = ffmpeg.output(mixed_audio, output_path)
             ffmpeg.run(output, overwrite_output=True)
             return f"Audio files mixed successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # Re-raise to ensure function returns on all paths
 
     @mcp.tool
     async def audio_fade_in(
@@ -379,13 +385,14 @@ def register_audio_tools(mcp: FastMCP) -> None:
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: Any = ffmpeg.input(input_path)
             stream = ffmpeg.filter(stream, "afade", type="in", duration=duration)
-            output = ffmpeg.output(stream, output_path)
+            output: Any = ffmpeg.output(stream, output_path)
             ffmpeg.run(output, overwrite_output=True)
             return f"Fade-in effect applied ({duration}s) and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # Re-raise to ensure function returns on all paths
 
     @mcp.tool
     async def audio_fade_out(
@@ -420,10 +427,11 @@ def register_audio_tools(mcp: FastMCP) -> None:
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: Any = ffmpeg.input(input_path)
             stream = ffmpeg.filter(stream, "afade", type="out", duration=duration)
-            output = ffmpeg.output(stream, output_path)
+            output: Any = ffmpeg.output(stream, output_path)
             ffmpeg.run(output, overwrite_output=True)
             return f"Fade-out effect applied ({duration}s) and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # Re-raise to ensure function returns on all paths

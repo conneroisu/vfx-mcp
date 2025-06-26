@@ -22,7 +22,7 @@ Example:
 from fastmcp import FastMCP
 
 
-def create_mcp_server() -> FastMCP:
+def create_mcp_server() -> FastMCP[None]:
     """Create and configure the VFX MCP server with all tools registered.
 
     Initializes a FastMCP server instance and registers all available video
@@ -30,13 +30,13 @@ def create_mcp_server() -> FastMCP:
     comprehensive API for video processing operations.
 
     Returns:
-        FastMCP: Configured server instance with all tools registered.
+        FastMCP[None]: Configured server instance with all tools registered.
 
     Example:
         server = create_mcp_server()
         # Server ready to handle video editing requests
     """
-    mcp = FastMCP("vfx-mcp")
+    mcp: FastMCP[None] = FastMCP("vfx-mcp")
 
     # Import and register all tool modules
     from ..resources.mcp_endpoints import register_resource_endpoints

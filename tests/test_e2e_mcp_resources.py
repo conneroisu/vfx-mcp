@@ -9,14 +9,41 @@ from __future__ import annotations
 
 import json
 import os
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import ffmpeg
 import pytest
-from fastmcp import Client
+from fastmcp import Client, FastMCP
+from fastmcp.client.transports import FastMCPTransport
 
 if TYPE_CHECKING:
-    pass
+    from typing import TypedDict, NotRequired
+    
+    class VideoInfo(TypedDict):
+        width: int
+        height: int
+        codec: str
+        framerate: NotRequired[str]
+        bitrate: NotRequired[str]
+    
+    class AudioInfo(TypedDict):
+        codec: str
+        sample_rate: NotRequired[str]
+        channels: NotRequired[int]
+        bitrate: NotRequired[str]
+    
+    class VideoMetadata(TypedDict):
+        filename: str
+        duration: float
+        video: VideoInfo
+        audio: NotRequired[AudioInfo]
+        size: NotRequired[int]
+        format: NotRequired[str]
+    
+    class VideoList(TypedDict):
+        videos: list[str]
+        count: NotRequired[int]
 
 
 class TestMCPResourcesE2E:
@@ -24,8 +51,8 @@ class TestMCPResourcesE2E:
 
     @pytest.mark.integration
     async def test_resources_with_video_operations(
-        self, sample_videos, temp_dir, mcp_server
-    ):
+        self, sample_videos: list[Path], temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test MCP resources in combination with video operations.
 
         This test uses MCP resources to discover videos and then
@@ -33,24 +60,27 @@ class TestMCPResourcesE2E:
         """
         # Change to temp directory for resource discovery
         original_cwd = os.getcwd()
-        os.chdir(temp_dir)
+        os.chdir(str(temp_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Step 1: List videos using resource endpoint
                 list_result = await client.read_resource("videos://list")
-                video_list = json.loads(list_result[0].text)
+                # Resource should be text for JSON responses
+                assert hasattr(list_result[0], 'text'), "Expected text resource"
+                video_list = cast('VideoList', json.loads(list_result[0].text))
 
                 assert "videos" in video_list
                 assert len(video_list["videos"]) == len(sample_videos)
 
                 # Step 2: Get metadata for each video using resources
-                video_metadata = []
+                video_metadata: list[VideoMetadata] = []
                 for video_filename in video_list["videos"]:
                     metadata_result = await client.read_resource(
                         f"videos://{video_filename}/metadata"
                     )
-                    metadata = json.loads(metadata_result[0].text)
+                    metadata = cast('VideoMetadata', json.loads(metadata_result[0].text))
                     video_metadata.append(metadata)
 
                 # Verify metadata structure
@@ -69,7 +99,7 @@ class TestMCPResourcesE2E:
 
                         # Trim based on duration
                         trim_duration = min(1.0, metadata["duration"] - 0.5)
-                        trim_result = await client.call_tool(
+                        _ = await client.call_tool(
                             "trim_video",
                             {
                                 "input_path": str(video_path),
@@ -84,7 +114,7 @@ class TestMCPResourcesE2E:
             os.chdir(original_cwd)
 
     @pytest.mark.integration
-    async def test_resource_discovery_workflow(self, temp_dir, mcp_server):
+    async def test_resource_discovery_workflow(self, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test comprehensive resource discovery and processing workflow.
 
         This test creates multiple videos with different properties,
@@ -97,42 +127,40 @@ class TestMCPResourcesE2E:
             {"name": "long.mp4", "duration": 8, "size": "1280x720"},
         ]
 
-        created_videos = []
+        created_videos: list[Path] = []
         for spec in video_specs:
-            video_path = temp_dir / spec["name"]
-            (
-                ffmpeg.input(
+            video_path = temp_dir / str(spec["name"])
+            ffmpeg.input(
                     f"testsrc=duration={spec['duration']}:size={spec['size']}:rate=24",
                     f="lavfi",
-                )
-                .output(
+                ).output(
                     str(video_path),
                     vcodec="libx264",
                     preset="ultrafast",
                     **{"f": "mp4"},
-                )
-                .overwrite_output()
-                .run(quiet=True)
-            )
+                ).overwrite_output().run(quiet=True)
             created_videos.append(video_path)
 
         # Change to temp directory for resource discovery
         original_cwd = os.getcwd()
-        os.chdir(temp_dir)
+        os.chdir(str(temp_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Step 1: Discover all videos
                 list_result = await client.read_resource("videos://list")
-                video_list = json.loads(list_result[0].text)
+                # Resource should be text for JSON responses
+                assert hasattr(list_result[0], 'text'), "Expected text resource"
+                video_list = cast('VideoList', json.loads(list_result[0].text))
 
                 assert "videos" in video_list
                 assert len(video_list["videos"]) == len(video_specs)
 
                 # Step 2: Analyze each video and categorize
-                short_videos = []
-                medium_videos = []
-                long_videos = []
+                short_videos: list[tuple[str, 'VideoMetadata']] = []
+                medium_videos: list[tuple[str, 'VideoMetadata']] = []
+                long_videos: list[tuple[str, 'VideoMetadata']] = []
 
                 for video_filename in video_list["videos"]:
                     metadata_result = await client.read_resource(
@@ -151,7 +179,7 @@ class TestMCPResourcesE2E:
                 # Short videos: generate thumbnails only
                 for filename, metadata in short_videos:
                     thumb_path = temp_dir / f"{filename}_thumb.jpg"
-                    thumb_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "generate_thumbnail",
                         {
                             "input_path": filename,
@@ -166,7 +194,7 @@ class TestMCPResourcesE2E:
                 # Medium videos: trim and resize
                 for filename, _metadata in medium_videos:
                     trimmed_path = temp_dir / f"trimmed_{filename}"
-                    trim_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "trim_video",
                         {
                             "input_path": filename,
@@ -178,7 +206,7 @@ class TestMCPResourcesE2E:
                     assert trimmed_path.exists()
 
                     resized_path = temp_dir / f"resized_{filename}"
-                    resize_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "resize_video",
                         {
                             "input_path": str(trimmed_path),
@@ -192,7 +220,7 @@ class TestMCPResourcesE2E:
                 for filename, _metadata in long_videos:
                     # Trim to manageable length
                     trimmed_path = temp_dir / f"processed_{filename}"
-                    trim_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "trim_video",
                         {
                             "input_path": filename,
@@ -205,7 +233,7 @@ class TestMCPResourcesE2E:
 
                     # Apply effects
                     effects_path = temp_dir / f"effects_{filename}"
-                    effects_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "apply_filter",
                         {
                             "input_path": str(trimmed_path),
@@ -235,14 +263,14 @@ class TestMCPResourcesE2E:
             os.chdir(original_cwd)
 
     @pytest.mark.integration
-    async def test_metadata_driven_processing(self, temp_dir, mcp_server):
+    async def test_metadata_driven_processing(self, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test processing videos based on their metadata properties.
 
         This test discovers video metadata and makes processing decisions
         based on video properties like resolution, duration, and codec.
         """
         # Create videos with different properties for testing
-        test_videos = [
+        test_videos: list[dict[str, Any]] = [
             {
                 "name": "hd_video.mp4",
                 "duration": 4,
@@ -264,30 +292,29 @@ class TestMCPResourcesE2E:
         ]
 
         for spec in test_videos:
-            video_path = temp_dir / spec["name"]
-            (
-                ffmpeg.input(
+            video_path = temp_dir / str(spec["name"])
+            stream = ffmpeg.input(
                     f"testsrc=duration={spec['duration']}:size={spec['size']}:rate={spec['rate']}",
                     f="lavfi",
-                )
-                .output(
+                ).output(
                     str(video_path),
                     vcodec="libx264",
                     preset="ultrafast",
                     **{"f": "mp4"},
-                )
-                .overwrite_output()
-                .run(quiet=True)
-            )
+                ).overwrite_output()
+            ffmpeg.run(stream, quiet=True)
 
         original_cwd = os.getcwd()
-        os.chdir(temp_dir)
+        os.chdir(str(temp_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Discover and analyze all videos
                 list_result = await client.read_resource("videos://list")
-                video_list = json.loads(list_result[0].text)
+                # Resource should be text for JSON responses
+                assert hasattr(list_result[0], 'text'), "Expected text resource"
+                video_list = cast('VideoList', json.loads(list_result[0].text))
 
                 for video_filename in video_list["videos"]:
                     metadata_result = await client.read_resource(
@@ -303,7 +330,7 @@ class TestMCPResourcesE2E:
                     if width >= 1920:  # High resolution
                         # Compress for web delivery
                         compressed_path = temp_dir / f"web_{video_filename}"
-                        compress_result = await client.call_tool(
+                        _ = await client.call_tool(
                             "convert_format",
                             {
                                 "input_path": video_filename,
@@ -318,7 +345,7 @@ class TestMCPResourcesE2E:
 
                         # Generate high-quality thumbnail
                         thumb_path = temp_dir / f"hq_{video_filename}_thumb.jpg"
-                        thumb_result = await client.call_tool(
+                        _ = await client.call_tool(
                             "generate_thumbnail",
                             {
                                 "input_path": video_filename,
@@ -333,7 +360,7 @@ class TestMCPResourcesE2E:
                     elif width == height:  # Square format
                         # Optimize for social media
                         social_path = temp_dir / f"social_{video_filename}"
-                        social_result = await client.call_tool(
+                        _ = await client.call_tool(
                             "resize_video",
                             {
                                 "input_path": video_filename,
@@ -345,7 +372,7 @@ class TestMCPResourcesE2E:
 
                         # Apply trendy effects
                         effects_path = temp_dir / f"trendy_{video_filename}"
-                        effects_result = await client.call_tool(
+                        _ = await client.call_tool(
                             "apply_filter",
                             {
                                 "input_path": str(social_path),
@@ -361,7 +388,7 @@ class TestMCPResourcesE2E:
                         if duration > 5:
                             # Trim longer videos
                             trimmed_path = temp_dir / f"trimmed_{video_filename}"
-                            trim_result = await client.call_tool(
+                            _ = await client.call_tool(
                                 "trim_video",
                                 {
                                     "input_path": video_filename,
@@ -374,7 +401,7 @@ class TestMCPResourcesE2E:
 
                         # Standard thumbnail
                         std_thumb_path = temp_dir / f"std_{video_filename}_thumb.jpg"
-                        std_thumb_result = await client.call_tool(
+                        _ = await client.call_tool(
                             "generate_thumbnail",
                             {
                                 "input_path": video_filename,
@@ -390,7 +417,7 @@ class TestMCPResourcesE2E:
             os.chdir(original_cwd)
 
     @pytest.mark.integration
-    async def test_batch_processing_via_resources(self, temp_dir, mcp_server):
+    async def test_batch_processing_via_resources(self, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test batch processing of videos discovered via resources.
 
         This test simulates a batch processing scenario where multiple
@@ -398,37 +425,36 @@ class TestMCPResourcesE2E:
         """
         # Create a batch of videos to process
         batch_count = 6
-        batch_videos = []
+        batch_videos: list[Path] = []
 
         for i in range(batch_count):
             video_path = temp_dir / f"batch_{i:02d}.mp4"
             duration = 2 + (i * 0.5)  # Varying durations
             size = ["320x240", "640x480", "1280x720"][i % 3]  # Varying sizes
 
-            (
-                ffmpeg.input(
+            stream = ffmpeg.input(
                     f"testsrc=duration={duration}:size={size}:rate=24",
                     f="lavfi",
-                )
-                .output(
+                ).output(
                     str(video_path),
                     vcodec="libx264",
                     preset="ultrafast",
                     **{"f": "mp4"},
-                )
-                .overwrite_output()
-                .run(quiet=True)
-            )
+                ).overwrite_output()
+            ffmpeg.run(stream, quiet=True)
             batch_videos.append(video_path)
 
         original_cwd = os.getcwd()
-        os.chdir(temp_dir)
+        os.chdir(str(temp_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Step 1: Discover all videos
                 list_result = await client.read_resource("videos://list")
-                video_list = json.loads(list_result[0].text)
+                # Resource should be text for JSON responses
+                assert hasattr(list_result[0], 'text'), "Expected text resource"
+                video_list = cast('VideoList', json.loads(list_result[0].text))
 
                 # Filter for batch videos only
                 batch_filenames = [
@@ -436,22 +462,22 @@ class TestMCPResourcesE2E:
                 ]
 
                 # Step 2: Process each video in the batch
-                processed_videos = []
-                thumbnails = []
+                processed_videos: list[Path] = []
+                thumbnails: list[Path] = []
 
                 for video_filename in batch_filenames:
                     # Get metadata
                     metadata_result = await client.read_resource(
                         f"videos://{video_filename}/metadata"
                     )
-                    metadata = json.loads(metadata_result[0].text)
+                    metadata: dict[str, Any] = json.loads(metadata_result[0].text)
 
                     # Standard processing pipeline
                     # 1. Trim to consistent length
                     trimmed_path = temp_dir / f"proc_{video_filename}"
                     trim_duration = min(2.0, metadata["duration"] - 0.2)
 
-                    trim_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "trim_video",
                         {
                             "input_path": video_filename,
@@ -492,7 +518,7 @@ class TestMCPResourcesE2E:
                     thumb_path = (
                         temp_dir / f"thumb_{video_filename.replace('.mp4', '.jpg')}"
                     )
-                    thumb_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "generate_thumbnail",
                         {
                             "input_path": str(enhanced_path),
@@ -518,7 +544,7 @@ class TestMCPResourcesE2E:
                     assert final_concat_path.exists()
 
                     # Verify final video duration
-                    probe = ffmpeg.probe(str(final_concat_path))
+                    probe: dict[str, Any] = ffmpeg.probe(str(final_concat_path))
                     total_duration = float(probe["format"]["duration"])
                     expected_duration = len(processed_videos) * 2.0  # ~2s each
                     assert abs(total_duration - expected_duration) < 1.0
@@ -531,7 +557,7 @@ class TestMCPResourcesE2E:
             os.chdir(original_cwd)
 
     @pytest.mark.integration
-    async def test_resource_error_handling(self, temp_dir, mcp_server):
+    async def test_resource_error_handling(self, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test error handling for MCP resources.
 
         This test verifies that resource endpoints handle errors correctly
@@ -542,13 +568,16 @@ class TestMCPResourcesE2E:
         empty_dir.mkdir()
 
         original_cwd = os.getcwd()
-        os.chdir(empty_dir)
+        os.chdir(str(empty_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Test listing videos in empty directory
                 list_result = await client.read_resource("videos://list")
-                video_list = json.loads(list_result[0].text)
+                # Resource should be text for JSON responses
+                assert hasattr(list_result[0], 'text'), "Expected text resource"
+                video_list = cast('VideoList', json.loads(list_result[0].text))
 
                 assert "videos" in video_list
                 assert len(video_list["videos"]) == 0
@@ -571,30 +600,27 @@ class TestMCPResourcesE2E:
         """
         # Copy sample video to temp directory
         test_video = temp_dir / "test_consistency.mp4"
-        (
-            ffmpeg.input(str(sample_video))
-            .output(str(test_video), c="copy")
-            .overwrite_output()
-            .run(quiet=True)
-        )
+        stream = ffmpeg.input(str(sample_video)).output(str(test_video), c="copy").overwrite_output()
+        ffmpeg.run(stream, quiet=True)
 
         original_cwd = os.getcwd()
-        os.chdir(temp_dir)
+        os.chdir(str(temp_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Get metadata via resource endpoint
                 resource_result = await client.read_resource(
                     f"videos://{test_video.name}/metadata"
                 )
-                resource_metadata = json.loads(resource_result[0].text)
+                resource_metadata = cast(VideoMetadata, json.loads(resource_result[0].text))
 
                 # Get metadata via tool
                 tool_result = await client.call_tool(
                     "get_video_info",
                     {"video_path": test_video.name},
                 )
-                tool_metadata = json.loads(tool_result[0].text)
+                tool_metadata = cast(VideoMetadata, json.loads(tool_result[0].text))
 
                 # Compare metadata consistency
                 assert resource_metadata["filename"] == tool_metadata["filename"]
@@ -649,7 +675,7 @@ class TestMCPResourcesE2E:
                 processed_metadata_result = await client.read_resource(
                     f"videos://{processed_video.name}/metadata"
                 )
-                processed_metadata = json.loads(processed_metadata_result[0].text)
+                processed_metadata = cast(VideoMetadata, json.loads(processed_metadata_result[0].text))
 
                 # Verify dimensions changed correctly
                 expected_width = int(resource_metadata["video"]["width"] * 0.75)
@@ -670,33 +696,30 @@ class TestMCPResourcesE2E:
         """
         # Create many small video files
         video_count = 20
-        created_videos = []
+        created_videos: list[Path] = []
 
         for i in range(video_count):
             video_path = temp_dir / f"many_{i:03d}.mp4"
             duration = 1 + (i % 3)  # 1-3 second videos
 
-            (
-                ffmpeg.input(
+            stream = ffmpeg.input(
                     f"testsrc=duration={duration}:size=320x240:rate=24",
                     f="lavfi",
-                )
-                .output(
+                ).output(
                     str(video_path),
                     vcodec="libx264",
                     preset="ultrafast",
                     **{"f": "mp4"},
-                )
-                .overwrite_output()
-                .run(quiet=True)
-            )
+                ).overwrite_output()
+            ffmpeg.run(stream, quiet=True)
             created_videos.append(video_path)
 
         original_cwd = os.getcwd()
-        os.chdir(temp_dir)
+        os.chdir(str(temp_dir))
 
         try:
-            async with Client(mcp_server) as client:
+            client: Client[FastMCPTransport] = Client(mcp_server)
+            async with client:
                 # Test listing all videos
                 list_result = await client.read_resource("videos://list")
                 video_list = json.loads(list_result[0].text)
@@ -728,7 +751,7 @@ class TestMCPResourcesE2E:
                         temp_dir
                         / f"batch_thumb_{video_filename.replace('.mp4', '.jpg')}"
                     )
-                    thumb_result = await client.call_tool(
+                    _ = await client.call_tool(
                         "generate_thumbnail",
                         {
                             "input_path": video_filename,

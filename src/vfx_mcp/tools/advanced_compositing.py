@@ -11,9 +11,11 @@ from ..core import (
     validate_range,
 )
 
+__all__ = ["register_compositing_tools"]
+
 
 def register_compositing_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[None],
 ) -> None:
     """Register advanced compositing tools with the MCP server."""
 
@@ -71,10 +73,10 @@ def register_compositing_tools(
         )
 
         try:
-            input_stream = ffmpeg.input(input_path)
+            input_stream: ffmpeg.Stream = ffmpeg.input(input_path)
 
             # Create chromakey filter
-            keyed = ffmpeg.filter(
+            keyed: ffmpeg.Stream = ffmpeg.filter(
                 input_stream,
                 "chromakey",
                 color=key_color,
@@ -91,9 +93,10 @@ def register_compositing_tools(
                     mix=spill_reduction,
                 )
 
+            output_stream: ffmpeg.Stream
             if background_path:
                 # Composite with background
-                background = ffmpeg.input(background_path)
+                background: ffmpeg.Stream = ffmpeg.input(background_path)
                 output_stream = ffmpeg.filter(
                     [background, keyed],
                     "overlay",
@@ -104,7 +107,7 @@ def register_compositing_tools(
                 # Transparent background
                 output_stream = keyed
 
-            output = ffmpeg.output(
+            output: ffmpeg.Stream = ffmpeg.output(
                 output_stream,
                 output_path,
                 vcodec="libx264",
@@ -120,6 +123,8 @@ def register_compositing_tools(
             return f"Green screen effect applied{bg_msg} and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            # handle_ffmpeg_error always raises, so this is unreachable
+            raise
 
     @mcp.tool
     async def apply_motion_blur(
@@ -162,7 +167,7 @@ def register_compositing_tools(
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: ffmpeg.Stream = ffmpeg.input(input_path)
 
             # Convert angle and strength to blur parameters
             blur_amount = int(blur_strength * 3) * 2 + 1  # Odd number for kernel size
@@ -200,7 +205,7 @@ def register_compositing_tools(
                     luma_radius=f"1:{blur_amount}",
                 )
 
-            output = create_standard_output(stream, output_path)
+            output: ffmpeg.Stream = create_standard_output(stream, output_path)
             ffmpeg.run(output, overwrite_output=True)
 
             return (
@@ -209,3 +214,5 @@ def register_compositing_tools(
             )
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            # handle_ffmpeg_error always raises, so this is unreachable
+            raise

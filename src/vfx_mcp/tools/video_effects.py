@@ -40,7 +40,7 @@ from ..core import (
 
 
 def register_video_effects_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[None],
 ) -> None:
     """Register video effects tools with the MCP server.
 
@@ -103,7 +103,7 @@ def register_video_effects_tools(
                     strength=1.5
                 )
         """
-        validate_filter_name(filter)
+        _ = validate_filter_name(filter)
         validate_range(strength, 0.1, 3.0, "Filter strength")
 
         await log_operation(
@@ -112,7 +112,7 @@ def register_video_effects_tools(
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: ffmpeg.Stream = ffmpeg.input(input_path)
 
             # Apply different filters based on name
             if filter == "blur":
@@ -176,15 +176,17 @@ def register_video_effects_tools(
                 stream = ffmpeg.filter(
                     stream,
                     "scale",
-                    int(width),
-                    int(height),
+                    str(int(width)),
+                    str(int(height)),
                 )
 
-            output = create_standard_output(stream, output_path)
-            ffmpeg.run(output, overwrite_output=True)
+            output: ffmpeg.Stream = create_standard_output(stream, output_path)
+            _ = ffmpeg.run(output, overwrite_output=True)
             return f"{filter.title()} filter applied and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            # handle_ffmpeg_error raises, but we need a return for type checking
+            raise
 
     @mcp.tool
     async def change_speed(
@@ -239,10 +241,10 @@ def register_video_effects_tools(
         )
 
         try:
-            stream = ffmpeg.input(input_path)
+            stream: ffmpeg.Stream = ffmpeg.input(input_path)
 
             # Apply speed change to video and audio
-            video_stream = ffmpeg.filter(
+            video_stream: ffmpeg.Stream = ffmpeg.filter(
                 stream["v"],
                 "setpts",
                 f"PTS/{speed}",
@@ -250,28 +252,28 @@ def register_video_effects_tools(
 
             # Handle atempo filter limitations (0.5-2.0 range)
             # For speeds outside this range, chain multiple atempo filters
-            audio_stream = stream["a"]
+            audio_stream: ffmpeg.Stream = stream["a"]
             current_speed = speed
 
             while current_speed > 2.0:
-                audio_stream = ffmpeg.filter(audio_stream, "atempo", 2.0)
+                audio_stream = ffmpeg.filter(audio_stream, "atempo", "2.0")
                 current_speed /= 2.0
 
             while current_speed < 0.5:
-                audio_stream = ffmpeg.filter(audio_stream, "atempo", 0.5)
+                audio_stream = ffmpeg.filter(audio_stream, "atempo", "0.5")
                 current_speed /= 0.5
 
             if current_speed != 1.0:
-                audio_stream = ffmpeg.filter(audio_stream, "atempo", current_speed)
+                audio_stream = ffmpeg.filter(audio_stream, "atempo", str(current_speed))
 
-            output = ffmpeg.output(
+            output: ffmpeg.Stream = ffmpeg.output(
                 video_stream,
                 audio_stream,
                 output_path,
                 vcodec="libx264",
                 acodec="aac",
             )
-            ffmpeg.run(output, overwrite_output=True)
+            _ = ffmpeg.run(output, overwrite_output=True)
 
             speed_desc = "faster" if speed > 1.0 else "slower"
             return (
@@ -280,6 +282,8 @@ def register_video_effects_tools(
             )
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            # handle_ffmpeg_error raises, but we need a return for type checking
+            raise
 
     @mcp.tool
     async def generate_thumbnail(
@@ -326,17 +330,22 @@ def register_video_effects_tools(
         )
 
         try:
-            stream = ffmpeg.input(input_path, ss=timestamp)
+            stream: ffmpeg.Stream = ffmpeg.input(input_path, ss=timestamp)
 
             # Only apply scaling if dimensions are specified
             if width is not None or height is not None:
                 # Use -1 for auto-scaling when one dimension is not specified
                 scale_width = width if width is not None else -1
                 scale_height = height if height is not None else -1
-                stream = ffmpeg.filter(stream, "scale", scale_width, scale_height)
+                stream = ffmpeg.filter(stream, "scale", str(scale_width), str(scale_height))
 
-            output = ffmpeg.output(stream, output_path, vframes=1)
-            ffmpeg.run(output, overwrite_output=True)
+            output: ffmpeg.Stream = ffmpeg.output(stream, output_path, vframes=1)
+            _ = ffmpeg.run(output, overwrite_output=True)
             return f"Thumbnail generated and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            # handle_ffmpeg_error raises, but we need a return for type checking
+            raise
+    
+    # Mark decorated functions as used (they're accessed via the @mcp.tool decorator)
+    _ = (apply_filter, change_speed, generate_thumbnail)

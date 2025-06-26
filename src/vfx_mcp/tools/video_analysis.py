@@ -3,7 +3,7 @@
 from fastmcp import FastMCP
 
 
-def register_analysis_tools(mcp: FastMCP) -> None:
+def register_analysis_tools(mcp: FastMCP[None]) -> None:
     """Register video analysis tools with the MCP server."""
     # TODO: Implement analysis tools
     # This module will contain:

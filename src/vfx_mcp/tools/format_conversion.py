@@ -37,7 +37,7 @@ from ..core import (
 
 
 def register_format_conversion_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[None],
 ) -> None:
     """Register format conversion tools with the MCP server.
 
@@ -126,3 +126,7 @@ def register_format_conversion_tools(
             return f"Format converted successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise  # This line is never reached but satisfies type checker
+    
+    # Acknowledge that the function is registered with MCP
+    _ = convert_format

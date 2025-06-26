@@ -1,4 +1,3 @@
-
 {
   description = "vfx-mcp documentation";
 
@@ -47,26 +46,26 @@
         src = ./.;
 
         npmDepsHash = "sha256-YwKKA9gCF/Z/y2bXFlD6guExjf2GQj+hE0LawhWz9Ow=";
-        
+
         makeCacheWritable = true;
 
         buildPhase = ''
           runHook preBuild
-          
+
           # Copy examples
           cp -r ${./../examples} ./.
-          
+
           # Build the Astro site
           npm run build
-          
+
           runHook postBuild
         '';
 
         installPhase = ''
           runHook preInstall
-          
+
           cp -r dist $out
-          
+
           runHook postInstall
         '';
       };

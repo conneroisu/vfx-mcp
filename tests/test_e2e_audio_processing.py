@@ -7,11 +7,12 @@ and complete operations from input to output validation.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import ffmpeg
 import pytest
-from fastmcp import Client
+from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
 
 if TYPE_CHECKING:
@@ -23,8 +24,8 @@ class TestAudioProcessingE2E:
 
     @pytest.mark.integration
     async def test_complete_audio_workflow(
-        self, sample_video, sample_audio, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, sample_audio: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test a complete audio processing workflow.
 
         This test simulates a realistic audio workflow:
@@ -36,7 +37,7 @@ class TestAudioProcessingE2E:
         async with Client(mcp_server) as client:
             # Step 1: Extract original audio
             extracted_audio_path = temp_dir / "extracted.mp3"
-            extract_result = await client.call_tool(
+            _ = await client.call_tool(
                 "extract_audio",
                 {
                     "input_path": str(sample_video),
@@ -56,7 +57,7 @@ class TestAudioProcessingE2E:
 
             # Step 2: Replace audio in video
             video_with_new_audio = temp_dir / "video_new_audio.mp4"
-            replace_result = await client.call_tool(
+            _ = await client.call_tool(
                 "add_audio",
                 {
                     "video_path": str(sample_video),
@@ -70,7 +71,7 @@ class TestAudioProcessingE2E:
 
             # Step 3: Mix audio with existing
             video_mixed_audio = temp_dir / "video_mixed_audio.mp4"
-            mix_result = await client.call_tool(
+            _ = await client.call_tool(
                 "add_audio",
                 {
                     "video_path": str(sample_video),
@@ -98,8 +99,8 @@ class TestAudioProcessingE2E:
 
     @pytest.mark.integration
     async def test_audio_format_conversion_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test extracting audio in different formats.
 
         This test extracts audio from a video in multiple formats
@@ -125,7 +126,7 @@ class TestAudioProcessingE2E:
                 if bitrate:
                     extract_args["bitrate"] = bitrate
 
-                extract_result = await client.call_tool(
+                _ = await client.call_tool(
                     "extract_audio",
                     extract_args,
                 )
@@ -151,8 +152,8 @@ class TestAudioProcessingE2E:
 
     @pytest.mark.integration
     async def test_audio_volume_adjustment_workflow(
-        self, sample_video, sample_audio, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, sample_audio: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test audio volume adjustments in various scenarios.
 
         This test verifies that audio volume adjustments work correctly
@@ -201,8 +202,8 @@ class TestAudioProcessingE2E:
 
     @pytest.mark.integration
     async def test_audio_synchronization_workflow(
-        self, sample_video, sample_audio, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, sample_audio: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test audio synchronization and duration matching.
 
         This test verifies that audio is properly synchronized with video
@@ -227,7 +228,7 @@ class TestAudioProcessingE2E:
 
             # Test replacing audio with longer audio (should be truncated)
             replace_long_path = temp_dir / "replace_long_audio.mp4"
-            replace_result = await client.call_tool(
+            _ = await client.call_tool(
                 "add_audio",
                 {
                     "video_path": str(sample_video),
@@ -246,7 +247,7 @@ class TestAudioProcessingE2E:
 
             # Test mixing with longer audio
             mix_long_path = temp_dir / "mix_long_audio.mp4"
-            mix_result = await client.call_tool(
+            _ = await client.call_tool(
                 "add_audio",
                 {
                     "video_path": str(sample_video),
@@ -265,8 +266,8 @@ class TestAudioProcessingE2E:
 
     @pytest.mark.integration
     async def test_audio_quality_preservation_workflow(
-        self, sample_video, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test audio quality preservation across operations.
 
         This test verifies that audio quality is preserved when
@@ -275,7 +276,7 @@ class TestAudioProcessingE2E:
         async with Client(mcp_server) as client:
             # Step 1: Extract high-quality audio
             hq_audio_path = temp_dir / "hq_audio.flac"
-            extract_result = await client.call_tool(
+            _ = await client.call_tool(
                 "extract_audio",
                 {
                     "input_path": str(sample_video),
@@ -287,7 +288,7 @@ class TestAudioProcessingE2E:
 
             # Step 2: Add the high-quality audio back to video
             hq_video_path = temp_dir / "hq_video.mp4"
-            add_result = await client.call_tool(
+            _ = await client.call_tool(
                 "add_audio",
                 {
                     "video_path": str(sample_video),
@@ -301,7 +302,7 @@ class TestAudioProcessingE2E:
 
             # Step 3: Extract audio again to compare
             extracted_again_path = temp_dir / "extracted_again.wav"
-            extract_again_result = await client.call_tool(
+            _ = await client.call_tool(
                 "extract_audio",
                 {
                     "input_path": str(hq_video_path),
@@ -323,8 +324,8 @@ class TestAudioProcessingE2E:
 
     @pytest.mark.integration
     async def test_audio_processing_with_video_operations(
-        self, sample_video, sample_audio, temp_dir, mcp_server
-    ):
+        self, sample_video: Path, sample_audio: Path, temp_dir: Path, mcp_server: FastMCP[None]
+    ) -> None:
         """Test audio processing combined with video operations.
 
         This test verifies that audio processing works correctly
@@ -333,7 +334,7 @@ class TestAudioProcessingE2E:
         async with Client(mcp_server) as client:
             # Step 1: Trim video first
             trimmed_video_path = temp_dir / "trimmed_for_audio.mp4"
-            trim_result = await client.call_tool(
+            _ = await client.call_tool(
                 "trim_video",
                 {
                     "input_path": str(sample_video),
@@ -346,7 +347,7 @@ class TestAudioProcessingE2E:
 
             # Step 2: Extract audio from trimmed video
             trimmed_audio_path = temp_dir / "trimmed_audio.mp3"
-            extract_result = await client.call_tool(
+            _ = await client.call_tool(
                 "extract_audio",
                 {
                     "input_path": str(trimmed_video_path),
@@ -359,7 +360,7 @@ class TestAudioProcessingE2E:
 
             # Step 3: Resize the trimmed video
             resized_video_path = temp_dir / "resized_for_audio.mp4"
-            resize_result = await client.call_tool(
+            _ = await client.call_tool(
                 "resize_video",
                 {
                     "input_path": str(trimmed_video_path),
@@ -371,7 +372,7 @@ class TestAudioProcessingE2E:
 
             # Step 4: Add new audio to resized video
             final_video_path = temp_dir / "final_with_audio.mp4"
-            add_audio_result = await client.call_tool(
+            _ = await client.call_tool(
                 "add_audio",
                 {
                     "video_path": str(resized_video_path),
@@ -405,7 +406,7 @@ class TestAudioProcessingE2E:
             assert audio_stream["codec_name"] == "aac"
 
     @pytest.mark.integration
-    async def test_audio_error_handling(self, sample_video, temp_dir, mcp_server):
+    async def test_audio_error_handling(self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test error handling in audio processing operations.
 
         This test verifies that audio processing tools handle errors
@@ -483,7 +484,7 @@ class TestAudioProcessingE2E:
                 )
 
     @pytest.mark.integration
-    async def test_audio_bitrate_variations(self, sample_video, temp_dir, mcp_server):
+    async def test_audio_bitrate_variations(self, sample_video: Path, temp_dir: Path, mcp_server: FastMCP[None]) -> None:
         """Test audio extraction with different bitrate settings.
 
         This test verifies that different bitrate settings work correctly
@@ -502,7 +503,7 @@ class TestAudioProcessingE2E:
             for bitrate, filename in bitrate_tests:
                 output_path = temp_dir / filename
 
-                extract_result = await client.call_tool(
+                _ = await client.call_tool(
                     "extract_audio",
                     {
                         "input_path": str(sample_video),

@@ -111,6 +111,17 @@ exclude_lines = [
     "raise NotImplementedError",
 ]
 
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+stubPath = "src/vfx_mcp/stubs"
+reportMissingTypeStubs = false
+reportExplicitAny = true
+reportUnknownVariableType = true
+reportUnknownMemberType = true
+reportUnknownParameterType = true
+reportMissingParameterType = true
+
 [dependency-groups]
 dev = [
     "build>=1.2.2.post1",

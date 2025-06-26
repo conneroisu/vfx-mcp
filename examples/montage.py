@@ -14,9 +14,83 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 from fastmcp import Client
+
+
+class VideoInfo(TypedDict, total=False):
+    """Type definition for video stream information."""
+    width: int
+    height: int
+    codec: str
+
+
+class AudioInfo(TypedDict, total=False):
+    """Type definition for audio stream information."""
+    codec: str
+
+
+class VideoMetadata(TypedDict, total=False):
+    """Type definition for video metadata returned by get_video_info."""
+    duration: float
+    video: VideoInfo
+    audio: AudioInfo
+
+
+def parse_video_metadata(text: str) -> VideoMetadata | None:
+    """Parse JSON text into VideoMetadata, returning None on error."""
+    try:
+        # Parse JSON - we accept the Any type here as it's unavoidable
+        json_data: object = json.loads(text)
+        
+        # Type guard to ensure we have a dict
+        if not isinstance(json_data, dict):
+            return None
+            
+        # Now build the typed result with explicit checking
+        result: VideoMetadata = {}
+        
+        # Check duration with explicit type narrowing
+        duration_raw = json_data.get("duration")
+        if isinstance(duration_raw, (int, float)):
+            result["duration"] = float(duration_raw)
+            
+        # Check video with explicit type narrowing
+        video_raw = json_data.get("video")
+        if isinstance(video_raw, dict):
+            video_info: VideoInfo = {}
+            # Type narrow each field individually
+            width_raw = video_raw.get("width")
+            height_raw = video_raw.get("height")
+            codec_raw = video_raw.get("codec")
+            
+            if isinstance(width_raw, int):
+                video_info["width"] = width_raw
+            if isinstance(height_raw, int):
+                video_info["height"] = height_raw
+            if isinstance(codec_raw, str):
+                video_info["codec"] = codec_raw
+                
+            if video_info:  # Only add if we found valid data
+                result["video"] = video_info
+                
+        # Check audio with explicit type narrowing
+        audio_raw = json_data.get("audio")
+        if isinstance(audio_raw, dict):
+            audio_info: AudioInfo = {}
+            codec_raw = audio_raw.get("codec")
+            
+            if isinstance(codec_raw, str):
+                audio_info["codec"] = codec_raw
+                
+            if audio_info:  # Only add if we found valid data
+                result["audio"] = audio_info
+                
+        return result if result else None
+        
+    except (json.JSONDecodeError, ValueError):
+        return None
 
 
 async def create_montage() -> None:
@@ -112,9 +186,10 @@ async def create_montage() -> None:
 
         # Step 3: Add background music (if available)
         music_path: str = "background_music.mp3"
+        final_path: str
         if Path(music_path).exists():
             print("\n3. Adding background music...")
-            final_path: str = "final_montage.mp4"
+            final_path = "final_montage.mp4"
 
             try:
                 _ = await client.call_tool(
@@ -130,7 +205,7 @@ async def create_montage() -> None:
                 print(f"   ✗ Error adding audio: {e}")
         else:
             print(f"\n3. Skipping background music ('{music_path}' not found)")
-            final_path: str = montage_path
+            final_path = montage_path
 
         # Step 4: Get information about the final video
         print("\n4. Final montage information:")
@@ -141,19 +216,41 @@ async def create_montage() -> None:
             )
 
             # Parse the result from MCP response
-            if info.content and hasattr(info.content[0], "text"):
-                info_data: dict[str, Any] = json.loads(info.content[0].text)
-            else:
-                info_data = info.content[0] if info.content else {}
+            # info is a list[MCPContent] - we need the first element
+            metadata: VideoMetadata | None = None
+            if info and len(info) > 0:
+                content = info[0]
+                # MCPContent types have a 'type' attribute we can check
+                if hasattr(content, "type") and hasattr(content, "text"):
+                    content_type = getattr(content, "type", None)
+                    if content_type == "text":
+                        # Now we know it's a TextContent, so text attribute exists
+                        text_value = getattr(content, "text", None)
+                        if isinstance(text_value, str):
+                            # Parse JSON using our type-safe helper
+                            metadata = parse_video_metadata(text_value)
 
-            print(f"   Duration: {info_data['duration']:.2f} seconds")
-            print(
-                f"   Resolution: {info_data['video']['width']}x"
-                + f"{info_data['video']['height']}"
-            )
-            print(f"   Video codec: {info_data['video']['codec']}")
-            if "audio" in info_data:
-                print(f"   Audio codec: {info_data['audio']['codec']}")
+            # Access the parsed data with proper type handling
+            if metadata:
+                duration = metadata.get("duration")
+                if duration is not None:
+                    print(f"   Duration: {duration:.2f} seconds")
+                
+                video_info = metadata.get("video")
+                if video_info:
+                    width = video_info.get("width")
+                    height = video_info.get("height")
+                    codec = video_info.get("codec")
+                    if width is not None and height is not None:
+                        print(f"   Resolution: {width}x{height}")
+                    if codec is not None:
+                        print(f"   Video codec: {codec}")
+                
+                audio_info = metadata.get("audio")
+                if audio_info:
+                    audio_codec = audio_info.get("codec")
+                    if audio_codec is not None:
+                        print(f"   Audio codec: {audio_codec}")
         except Exception as e:
             print(f"   ✗ Error getting video info: {e}")
 

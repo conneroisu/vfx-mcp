@@ -11,7 +11,6 @@ Example:
         register_basic_video_tools(mcp)
 """
 
-from typing import Any
 
 import ffmpeg
 from fastmcp import Context, FastMCP
@@ -23,10 +22,11 @@ from ..core import (
     log_operation,
     validate_range,
 )
+from ..core.utilities import VideoMetadata
 
 
 def register_basic_video_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[object],
 ) -> None:
     """Register basic video editing tools with the MCP server.
 
@@ -90,11 +90,15 @@ def register_basic_video_tools(
             return f"Video trimmed successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise
+    
+    # Ensure function is registered with MCP
+    del trim_video
 
     @mcp.tool
     async def get_video_info(
         video_path: str,
-    ) -> dict[str, Any]:
+    ) -> VideoMetadata:
         """Get detailed video metadata.
 
         Analyzes a video file and extracts comprehensive metadata including
@@ -106,12 +110,17 @@ def register_basic_video_tools(
 
         Returns:
             A dictionary containing video metadata with detailed information
-            about format, video stream, and audio stream properties.
+            about format, video stream, and audio stream properties, including
+            filename, format, duration, size, bitrate, and optional video/audio
+            stream metadata.
 
         Raises:
             RuntimeError: If ffmpeg encounters an error during analysis.
         """
         return get_video_metadata(video_path)
+    
+    # Ensure function is registered with MCP
+    del get_video_info
 
     @mcp.tool
     async def resize_video(
@@ -168,13 +177,14 @@ def register_basic_video_tools(
                     f"Resizing video by {scale}x",
                 )
             elif width:
-                stream = ffmpeg.filter(stream, "scale", width, -1)
+                stream = ffmpeg.filter(stream, "scale", str(width), "-1")
                 await log_operation(
                     ctx,
                     f"Resizing video to width {width}px",
                 )
             else:  # height
-                stream = ffmpeg.filter(stream, "scale", -1, height)
+                assert height is not None  # Type narrowing for type checker
+                stream = ffmpeg.filter(stream, "scale", "-1", str(height))
                 await log_operation(
                     ctx,
                     f"Resizing video to height {height}px",
@@ -185,6 +195,10 @@ def register_basic_video_tools(
             return f"Video resized and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise
+    
+    # Ensure function is registered with MCP
+    del resize_video
 
     @mcp.tool
     async def concatenate_videos(
@@ -227,6 +241,10 @@ def register_basic_video_tools(
             return f"Videos concatenated successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise
+    
+    # Ensure function is registered with MCP
+    del concatenate_videos
 
     @mcp.tool
     async def image_to_video(
@@ -279,3 +297,7 @@ def register_basic_video_tools(
             return f"Video created successfully and saved to {output_path}"
         except ffmpeg.Error as e:
             await handle_ffmpeg_error(e, ctx)
+            raise
+    
+    # Ensure function is registered with MCP
+    del image_to_video

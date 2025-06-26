@@ -4,7 +4,7 @@ from fastmcp import FastMCP
 
 
 def register_automation_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[None],
 ) -> None:
     """Register batch automation tools with the MCP server."""
     # TODO: Implement automation tools

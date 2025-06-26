@@ -64,19 +64,16 @@ def sample_video(temp_dir: Path) -> Path:
     audio_input = ffmpeg.input("sine=frequency=440:duration=5", f="lavfi")
 
     # Combine video and audio into MP4 container
-    (
-        ffmpeg.output(
-            video_input,
-            audio_input,
-            str(output_path),
-            vcodec="libx264",
-            acodec="aac",
-            audio_bitrate="128k",
-            **{"f": "mp4"},
-        )
-        .overwrite_output()
-        .run(quiet=True)
+    stream = ffmpeg.output(
+        video_input,
+        audio_input,
+        str(output_path),
+        vcodec="libx264",
+        acodec="aac",
+        audio_bitrate="128k",
+        **{"f": "mp4"},
     )
+    ffmpeg.run(stream, overwrite_output=True, quiet=True)
 
     return output_path
 
@@ -109,20 +106,18 @@ def sample_videos(temp_dir: Path) -> list[Path]:
 
         # Generate 2-second test videos with different patterns
         # Using ultrafast preset for faster test execution
-        (
-            ffmpeg.input(
-                f"{pattern}=duration=2:size=640x480:rate=24",
-                f="lavfi",
-            )
-            .output(
-                str(output_path),
-                vcodec="libx264",
-                preset="ultrafast",
-                **{"f": "mp4"},
-            )
-            .overwrite_output()
-            .run(quiet=True)
+        video_input = ffmpeg.input(
+            f"{pattern}=duration=2:size=640x480:rate=24",
+            f="lavfi",
         )
+        stream = ffmpeg.output(
+            video_input,
+            str(output_path),
+            vcodec="libx264",
+            preset="ultrafast",
+            **{"f": "mp4"},
+        )
+        ffmpeg.run(stream, overwrite_output=True, quiet=True)
 
         videos.append(output_path)
 
@@ -146,25 +141,23 @@ def sample_audio(temp_dir: Path) -> Path:
 
     # Generate a 3-second 440Hz sine wave (A4 musical note)
     # Using lavfi sine generator for consistent test audio
-    (
-        ffmpeg.input(
-            "sine=frequency=440:duration=3",
-            f="lavfi",
-        )
-        .output(
-            str(output_path),
-            acodec="mp3",
-            audio_bitrate="192k",
-        )
-        .overwrite_output()
-        .run(quiet=True)
+    audio_input = ffmpeg.input(
+        "sine=frequency=440:duration=3",
+        f="lavfi",
     )
+    stream = ffmpeg.output(
+        audio_input,
+        str(output_path),
+        acodec="mp3",
+        audio_bitrate="192k",
+    )
+    ffmpeg.run(stream, overwrite_output=True, quiet=True)
 
     return output_path
 
 
 @pytest.fixture
-def mcp_server() -> FastMCP:
+def mcp_server() -> FastMCP[None]:
     """Create an MCP server instance for testing.
 
     This fixture provides a configured FastMCP server instance with all

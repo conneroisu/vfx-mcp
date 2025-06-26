@@ -4,7 +4,7 @@ from fastmcp import FastMCP
 
 
 def register_animation_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[None],
 ) -> None:
     """Register text animation tools with the MCP server."""
     # TODO: Implement animation tools

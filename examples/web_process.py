@@ -17,9 +17,24 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TypedDict, cast
 
 from fastmcp import Client
+
+
+class VideoInfo(TypedDict):
+    """Type definition for video stream information."""
+    width: int
+    height: int
+    codec: str
+
+
+class VideoMetadata(TypedDict):
+    """Type definition for video metadata returned by get_video_info."""
+    filename: str
+    format: str
+    duration: float
+    video: VideoInfo
 
 
 async def process_for_web(
@@ -56,11 +71,21 @@ async def process_for_web(
             )
 
             # Parse the result from MCP response
-            if info_result.content and hasattr(info_result.content[0], "text"):
-                info: dict[str, Any] = json.loads(info_result.content[0].text)
+            # The result is a list of MCPContent objects
+            if info_result and len(info_result) > 0:
+                content = info_result[0]
+                # Use getattr to safely access the text attribute
+                text_attr = getattr(content, "text", None)
+                if text_attr is not None and isinstance(text_attr, str):
+                    result_text: str = text_attr
+                else:
+                    result_text = "{}"
             else:
-                info = info_result.content[0] if info_result.content else {}
+                result_text = "{}"
+            
+            info: VideoMetadata = cast(VideoMetadata, json.loads(result_text))
 
+            # Type-safe access to video info
             print(
                 f"   Original resolution: {info['video']['width']}x"
                 + f"{info['video']['height']}"

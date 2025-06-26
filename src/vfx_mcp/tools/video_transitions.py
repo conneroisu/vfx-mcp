@@ -4,7 +4,7 @@ from fastmcp import FastMCP
 
 
 def register_transition_tools(
-    mcp: FastMCP,
+    mcp: FastMCP[None],
 ) -> None:
     """Register video transition tools with the MCP server."""
     # TODO: Implement transition tools

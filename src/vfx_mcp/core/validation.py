@@ -39,7 +39,7 @@ def validate_video_paths(video_paths: list[str], min_count: int = 1) -> list[Pat
     if len(video_paths) < min_count:
         raise ValueError(f"At least {min_count} video file(s) required")
 
-    validated_paths = []
+    validated_paths: list[Path] = []
     for path_str in video_paths:
         path = validate_file_path(path_str)
         validated_paths.append(path)

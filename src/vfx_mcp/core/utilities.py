@@ -1,7 +1,8 @@
 """Common utilities and helper functions for VFX operations."""
 
 from pathlib import Path
-from typing import Any
+from typing import TypedDict, NotRequired
+from fractions import Fraction
 
 import ffmpeg
 from fastmcp import Context
@@ -35,9 +36,38 @@ async def log_operation(ctx: Context | None, message: str) -> None:
         await ctx.info(message)
 
 
+class VideoStreamMetadata(TypedDict):
+    """Video stream metadata."""
+    codec: str
+    width: int
+    height: int
+    fps: float
+    aspect_ratio: str
+    pixel_format: str
+
+
+class AudioStreamMetadata(TypedDict):
+    """Audio stream metadata."""
+    codec: str
+    channels: int
+    sample_rate: int
+    bitrate: int
+
+
+class VideoMetadata(TypedDict):
+    """Video metadata structure."""
+    filename: str
+    format: str
+    duration: float
+    size: int
+    bitrate: int
+    video: NotRequired[VideoStreamMetadata]
+    audio: NotRequired[AudioStreamMetadata]
+
+
 def get_video_metadata(
     video_path: str,
-) -> dict[str, Any]:
+) -> VideoMetadata:
     """Extract comprehensive video metadata using ffmpeg probe."""
     try:
         probe = ffmpeg.probe(video_path)
@@ -45,15 +75,15 @@ def get_video_metadata(
 
         # Find video and audio streams
         video_stream = next(
-            (s for s in probe["streams"] if s["codec_type"] == "video"),
+            (s for s in probe["streams"] if s.get("codec_type") == "video"),
             None,
         )
         audio_stream = next(
-            (s for s in probe["streams"] if s["codec_type"] == "audio"),
+            (s for s in probe["streams"] if s.get("codec_type") == "audio"),
             None,
         )
 
-        metadata = {
+        metadata: VideoMetadata = {
             "filename": Path(format_info.get("filename", "")).name,
             "format": format_info.get("format_name", ""),
             "duration": float(format_info.get("duration", 0)),
@@ -62,22 +92,24 @@ def get_video_metadata(
         }
 
         if video_stream:
-            metadata["video"] = {
+            video_meta: VideoStreamMetadata = {
                 "codec": video_stream.get("codec_name", ""),
                 "width": int(video_stream.get("width", 0)),
                 "height": int(video_stream.get("height", 0)),
-                "fps": eval(video_stream.get("r_frame_rate", "0/1")),
+                "fps": _parse_frame_rate(video_stream.get("r_frame_rate", "0/1")),
                 "aspect_ratio": video_stream.get("display_aspect_ratio", ""),
                 "pixel_format": video_stream.get("pix_fmt", ""),
             }
+            metadata["video"] = video_meta
 
         if audio_stream:
-            metadata["audio"] = {
+            audio_meta: AudioStreamMetadata = {
                 "codec": audio_stream.get("codec_name", ""),
                 "channels": int(audio_stream.get("channels", 0)),
                 "sample_rate": int(audio_stream.get("sample_rate", 0)),
                 "bitrate": int(audio_stream.get("bit_rate", 0)),
             }
+            metadata["audio"] = audio_meta
 
         return metadata
 
@@ -85,14 +117,16 @@ def get_video_metadata(
         raise RuntimeError(f"Error analyzing video: {e}") from e
 
 
-def create_standard_output(stream, output_path: str, **kwargs) -> Any:
+def create_standard_output(stream: ffmpeg.Stream, output_path: str, **kwargs: str | int | float) -> ffmpeg.Stream:
     """Create ffmpeg output with standard encoding settings."""
-    default_settings = {
+    default_settings: dict[str, str | int | float] = {
         "vcodec": "libx264",
         "acodec": "aac",
         "pix_fmt": "yuv420p",
     }
-    default_settings.update(kwargs)
+    # Merge kwargs into default_settings
+    for key, value in kwargs.items():
+        default_settings[key] = value
     return ffmpeg.output(stream, output_path, **default_settings)
 
 
@@ -148,3 +182,14 @@ def parse_size_range(
         raise ValueError(
             "Size range must be in format 'min:max' (e.g., '2:8')"
         ) from None
+
+
+def _parse_frame_rate(frame_rate: str) -> float:
+    """Parse frame rate string (e.g., '30/1' or '30000/1001') to float."""
+    try:
+        if "/" in frame_rate:
+            numerator, denominator = frame_rate.split("/")
+            return float(Fraction(int(numerator), int(denominator)))
+        return float(frame_rate)
+    except (ValueError, ZeroDivisionError):
+        return 0.0

@@ -9,7 +9,7 @@ from ..core import get_video_metadata
 
 
 def register_resource_endpoints(
-    mcp: FastMCP,
+    mcp: FastMCP[object],
 ) -> None:
     """Register MCP resource endpoints with the server."""
 
@@ -25,7 +25,7 @@ def register_resource_endpoints(
             ".flv",
             ".webm",
         }
-        video_files = []
+        video_files: list[str] = []
 
         # Search common video directories
         search_paths = [
@@ -52,6 +52,9 @@ def register_resource_endpoints(
             indent=2,
         )
 
+    # Ensure function is registered with MCP
+    del list_videos_resource
+
     @mcp.resource("videos://{filename}/metadata")
     async def video_metadata_resource(filename: str) -> str:
         """Get detailed metadata for a specific video file."""
@@ -60,6 +63,9 @@ def register_resource_endpoints(
             return json.dumps(metadata, indent=2)
         except Exception as e:
             return json.dumps({"error": str(e)}, indent=2)
+
+    # Ensure function is registered with MCP
+    del video_metadata_resource
 
     @mcp.resource("tools://advanced/{category}")
     async def advanced_tools_resource(category: str = "all") -> str:
@@ -106,3 +112,6 @@ def register_resource_endpoints(
             },
             indent=2,
         )
+
+    # Ensure function is registered with MCP
+    del advanced_tools_resource
