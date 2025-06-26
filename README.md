@@ -22,7 +22,17 @@ A powerful video editing MCP (Model Context Protocol) server built with FastMCP 
 
 ## Installation
 
-### Using uv (Recommended)
+### From PyPI (Recommended) 🎉
+
+```bash
+# Install directly from PyPI
+pip install vfx-mcp
+
+# Run the server
+vfx-mcp
+```
+
+### Using uv (Development)
 
 ```bash
 # Clone the repository
@@ -79,6 +89,19 @@ async with Client("python main.py") as client:
 ### CLI Usage with Claude Desktop
 
 Add to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "vfx": {
+      "command": "vfx-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+Or if using the development version:
 
 ```json
 {

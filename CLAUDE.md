@@ -6,11 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a video editing MCP (Model Context Protocol) server built with FastMCP and ffmpeg-python. The server enables LLMs to perform professional video editing operations through a standardized interface, providing AI-powered video manipulation and processing workflows.
 
+**🎉 Now available on PyPI!** Install with `pip install vfx-mcp` - https://pypi.org/project/vfx-mcp/
+
 ## Key Commands
 
 ### Development and Testing
 
 ```bash
+# Install from PyPI (recommended)
+pip install vfx-mcp
+
+# Run the MCP server
+vfx-mcp
+
+# Or for development:
 # Enter Nix development environment (includes all dependencies)
 nix develop
 
@@ -146,6 +155,8 @@ async def new_operation(
 ### MCP Client Integration
 
 Server supports both stdio and SSE transports for different integration scenarios:
-- **Claude Desktop**: Uses stdio transport with `uv run python main.py`
+- **Claude Desktop**: Uses stdio transport with `vfx-mcp` (PyPI) or `uv run python main.py` (dev)
 - **Web Applications**: Can use SSE transport with host/port configuration
 - **Direct API**: FastMCP client library for programmatic access
+
+**PyPI Installation**: The server is now available as a pip package at https://pypi.org/project/vfx-mcp/ making it easy to install and distribute across different environments.
